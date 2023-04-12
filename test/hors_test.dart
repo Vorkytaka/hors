@@ -1,14 +1,15 @@
 import 'package:hors/hors.dart';
-import 'package:hors/src/token/tokens.dart';
+import 'package:hors/src/recognizer/recognizer.dart';
+import 'package:hors/src/token/token_parsers.dart';
 
 void main() {
   final hors = Hors(
-    recognizers: List.empty(),
-    tokens: Tokens.all,
+    recognizers: Recognizer.all,
+    tokenParsers: TokenParsers.all,
   );
 
-  hors.parse(
-    'в следующий четверг в 9 вечера иду какац',
+  hors.x(
+    'В 11 часов 11 минут буду срать',
     DateTime.now(),
   );
 }

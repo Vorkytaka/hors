@@ -34,12 +34,12 @@
 // неотрицательное число меньше 1901	0
 // уже обработанная алгоритмом дата	@
 // любой другой токен	_
-import 'token.dart';
+import 'token_parser.dart';
 
-class Tokens {
-  const Tokens._();
+class TokenParsers {
+  const TokenParsers._();
 
-  static const PluralToken after = PluralToken(
+  static const PluralTokenParser after = PluralTokenParser(
     normalForms: ['через'],
     forms: {
       'через': 0,
@@ -50,7 +50,7 @@ class Tokens {
     metaSymbol: 'i',
   );
 
-  static const PluralToken afterPostfix = PluralToken(
+  static const PluralTokenParser afterPostfix = PluralTokenParser(
     normalForms: ['спустя'],
     forms: {
       'спустя': 0,
@@ -58,7 +58,7 @@ class Tokens {
     metaSymbol: 'l',
   );
 
-  static const PluralToken previousPostfix = PluralToken(
+  static const PluralTokenParser previousPostfix = PluralTokenParser(
     normalForms: ['назад'],
     forms: {
       'назад': 0,
@@ -66,7 +66,7 @@ class Tokens {
     metaSymbol: 'b',
   );
 
-  static const PluralToken next = PluralToken(
+  static const PluralTokenParser next = PluralTokenParser(
     normalForms: ['следующий', 'будущий'],
     forms: {
       'следующий': 1,
@@ -99,7 +99,7 @@ class Tokens {
     metaSymbol: 'x',
   );
 
-  static const PluralToken previous = PluralToken(
+  static const PluralTokenParser previous = PluralTokenParser(
     normalForms: ['прошлый', 'прошедший', 'предыдущий'],
     forms: {
       'прошлый': 1,
@@ -145,7 +145,7 @@ class Tokens {
     metaSymbol: 's',
   );
 
-  static const PluralToken current = PluralToken(
+  static const PluralTokenParser current = PluralTokenParser(
     normalForms: ['этот', 'текущий', 'нынешний'],
     forms: {
       'этот': 1,
@@ -191,7 +191,7 @@ class Tokens {
     metaSymbol: 'u',
   );
 
-  static const PluralToken currentNext = PluralToken(
+  static const PluralTokenParser currentNext = PluralTokenParser(
     normalForms: ['ближайший', 'грядущий'],
     forms: {
       'ближайший': 1,
@@ -212,7 +212,7 @@ class Tokens {
     metaSymbol: 'y',
   );
 
-  static const PluralToken today = PluralToken(
+  static const PluralTokenParser today = PluralTokenParser(
     normalForms: ['сегодня'],
     forms: {
       'сегодня': 1,
@@ -220,7 +220,7 @@ class Tokens {
     metaSymbol: '4',
   );
 
-  static const PluralToken tomorrow = PluralToken(
+  static const PluralTokenParser tomorrow = PluralTokenParser(
     normalForms: ['завтра'],
     forms: {
       'завтра': 1,
@@ -228,7 +228,7 @@ class Tokens {
     metaSymbol: '5',
   );
 
-  static const PluralToken afterTomorrow = PluralToken(
+  static const PluralTokenParser afterTomorrow = PluralTokenParser(
     normalForms: ['послезавтра'],
     forms: {
       'послезавтра': 1,
@@ -236,7 +236,7 @@ class Tokens {
     metaSymbol: '6',
   );
 
-  static const PluralToken yesterday = PluralToken(
+  static const PluralTokenParser yesterday = PluralTokenParser(
     normalForms: ['вчера'],
     forms: {
       'вчера': 1,
@@ -244,7 +244,7 @@ class Tokens {
     metaSymbol: '3',
   );
 
-  static const PluralToken beforeYesterday = PluralToken(
+  static const PluralTokenParser beforeYesterday = PluralTokenParser(
     normalForms: ['позавчера'],
     forms: {
       'позавчера': 1,
@@ -252,7 +252,7 @@ class Tokens {
     metaSymbol: '2',
   );
 
-  static const PluralToken holiday = PluralToken(
+  static const PluralTokenParser holiday = PluralTokenParser(
     normalForms: ['выходной'],
     forms: {
       'выходной': 1,
@@ -268,10 +268,10 @@ class Tokens {
       'выходных': 2,
       'выходными': 2,
     },
-    metaSymbol: '1',
+    metaSymbol: 'W',
   );
 
-  static const PluralToken minute = PluralToken(
+  static const PluralTokenParser minute = PluralTokenParser(
     normalForms: ['минута', 'мин'],
     forms: {
       'минута': 1,
@@ -289,7 +289,7 @@ class Tokens {
     metaSymbol: 'e',
   );
 
-  static const PluralToken hour = PluralToken(
+  static const PluralTokenParser hour = PluralTokenParser(
     normalForms: ['час', 'ч'],
     forms: {
       'час': 1,
@@ -306,7 +306,7 @@ class Tokens {
     metaSymbol: 'h',
   );
 
-  static const PluralToken day = PluralToken(
+  static const PluralTokenParser day = PluralTokenParser(
     normalForms: ['день'],
     forms: {
       'день': 1,
@@ -324,7 +324,7 @@ class Tokens {
     metaSymbol: 'd',
   );
 
-  static const PluralToken week = PluralToken(
+  static const PluralTokenParser week = PluralTokenParser(
     normalForms: ['неделя'],
     forms: {
       'неделя': 1,
@@ -340,7 +340,7 @@ class Tokens {
     metaSymbol: 'w',
   );
 
-  static const PluralToken month = PluralToken(
+  static const PluralTokenParser month = PluralTokenParser(
     normalForms: ['месяц', 'мес'],
     forms: {
       'месяц': 1,
@@ -358,7 +358,7 @@ class Tokens {
     metaSymbol: 'm',
   );
 
-  static const PluralToken year = PluralToken(
+  static const PluralTokenParser year = PluralTokenParser(
     normalForms: ['год'],
     forms: {
       'год': 1,
@@ -380,7 +380,7 @@ class Tokens {
     metaSymbol: 'Y',
   );
 
-  static const PluralToken noon = PluralToken(
+  static const PluralTokenParser noon = PluralTokenParser(
     normalForms: ['полдень'],
     forms: {
       'полдень': 1,
@@ -397,7 +397,7 @@ class Tokens {
     metaSymbol: 'n',
   );
 
-  static const PluralToken morning = PluralToken(
+  static const PluralTokenParser morning = PluralTokenParser(
     normalForms: ['утро'],
     forms: {
       'утро': 1,
@@ -413,7 +413,7 @@ class Tokens {
     metaSymbol: 'r',
   );
 
-  static const PluralToken evening = PluralToken(
+  static const PluralTokenParser evening = PluralTokenParser(
     normalForms: ['вечер'],
     forms: {
       'вечер': 1,
@@ -429,7 +429,7 @@ class Tokens {
     metaSymbol: 'v',
   );
 
-  static const PluralToken night = PluralToken(
+  static const PluralTokenParser night = PluralTokenParser(
     normalForms: ['ночь'],
     forms: {
       'ночь': 1,
@@ -443,7 +443,7 @@ class Tokens {
     metaSymbol: 'g',
   );
 
-  static const PluralToken half = PluralToken(
+  static const PluralTokenParser half = PluralTokenParser(
     normalForms: ['половина', 'пол'],
     forms: {
       'половина': 1,
@@ -461,7 +461,7 @@ class Tokens {
     metaSymbol: 'H',
   );
 
-  static const PluralToken quarter = PluralToken(
+  static const PluralTokenParser quarter = PluralTokenParser(
     normalForms: ['четверть'],
     forms: {
       'четверть': 1,
@@ -475,7 +475,7 @@ class Tokens {
     metaSymbol: 'Q',
   );
 
-  static const PluralToken dayInMonth = PluralToken(
+  static const PluralTokenParser dayInMonth = PluralTokenParser(
     normalForms: ['число'],
     forms: {
       'число': 1,
@@ -491,7 +491,7 @@ class Tokens {
     metaSymbol: '#',
   );
 
-  static const PluralToken january = PluralToken(
+  static const OrderPluralTokenParser january = OrderPluralTokenParser(
     normalForms: ['январь', 'янв'],
     forms: {
       'январь': 1,
@@ -508,9 +508,10 @@ class Tokens {
       'янв': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.january,
   );
 
-  static const PluralToken february = PluralToken(
+  static const OrderPluralTokenParser february = OrderPluralTokenParser(
     normalForms: ['февраль', 'фев'],
     forms: {
       'февраль': 1,
@@ -527,9 +528,10 @@ class Tokens {
       'фев': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.february,
   );
 
-  static const PluralToken march = PluralToken(
+  static const OrderPluralTokenParser march = OrderPluralTokenParser(
     normalForms: ['март', 'мар'],
     forms: {
       'март': 1,
@@ -545,9 +547,10 @@ class Tokens {
       'мар': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.march,
   );
 
-  static const PluralToken april = PluralToken(
+  static const OrderPluralTokenParser april = OrderPluralTokenParser(
     normalForms: ['апрель', 'апр'],
     forms: {
       'апрель': 1,
@@ -563,9 +566,10 @@ class Tokens {
       'апр': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.april,
   );
 
-  static const PluralToken may = PluralToken(
+  static const OrderPluralTokenParser may = OrderPluralTokenParser(
     normalForms: ['май', 'мая'],
     forms: {
       'май': 1,
@@ -580,9 +584,10 @@ class Tokens {
       'маях': 2,
     },
     metaSymbol: 'M',
+    order: DateTime.may,
   );
 
-  static const PluralToken june = PluralToken(
+  static const OrderPluralTokenParser june = OrderPluralTokenParser(
     normalForms: ['июнь', 'июн'],
     forms: {
       'июнь': 1,
@@ -598,9 +603,10 @@ class Tokens {
       'июн': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.june,
   );
 
-  static const PluralToken july = PluralToken(
+  static const OrderPluralTokenParser july = OrderPluralTokenParser(
     normalForms: ['июль', 'июл'],
     forms: {
       'июль': 1,
@@ -616,9 +622,10 @@ class Tokens {
       'июл': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.july,
   );
 
-  static const PluralToken august = PluralToken(
+  static const OrderPluralTokenParser august = OrderPluralTokenParser(
     normalForms: ['август', 'авг'],
     forms: {
       'август': 1,
@@ -634,9 +641,10 @@ class Tokens {
       'авг': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.august,
   );
 
-  static const PluralToken september = PluralToken(
+  static const OrderPluralTokenParser september = OrderPluralTokenParser(
     normalForms: ['сентябрь', 'сен', 'сент'],
     forms: {
       'сентябрь': 1,
@@ -654,9 +662,10 @@ class Tokens {
       'сент': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.september,
   );
 
-  static const PluralToken october = PluralToken(
+  static const OrderPluralTokenParser october = OrderPluralTokenParser(
     normalForms: ['октябрь', 'окт'],
     forms: {
       'октябрь': 1,
@@ -673,9 +682,10 @@ class Tokens {
       'окт': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.october,
   );
 
-  static const PluralToken november = PluralToken(
+  static const OrderPluralTokenParser november = OrderPluralTokenParser(
     normalForms: ['ноябрь', 'ноя', 'нояб'],
     forms: {
       'ноябрь': 1,
@@ -693,9 +703,10 @@ class Tokens {
       'нояб': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.november,
   );
 
-  static const PluralToken december = PluralToken(
+  static const OrderPluralTokenParser december = OrderPluralTokenParser(
     normalForms: ['декабрь', 'дек'],
     forms: {
       'декабрь': 1,
@@ -712,9 +723,10 @@ class Tokens {
       'дек': 1,
     },
     metaSymbol: 'M',
+    order: DateTime.december,
   );
 
-  static const PluralToken monday = PluralToken(
+  static const OrderPluralTokenParser monday = OrderPluralTokenParser(
     normalForms: ['понедельник', 'пн'],
     forms: {
       'понедельник': 1,
@@ -730,9 +742,10 @@ class Tokens {
       'пн': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.monday,
   );
 
-  static const PluralToken tuesday = PluralToken(
+  static const OrderPluralTokenParser tuesday = OrderPluralTokenParser(
     normalForms: ['вторник', 'вт'],
     forms: {
       'вторник': 1,
@@ -748,9 +761,10 @@ class Tokens {
       'вт': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.tuesday,
   );
 
-  static const PluralToken wednesday = PluralToken(
+  static const OrderPluralTokenParser wednesday = OrderPluralTokenParser(
     normalForms: ['среда', 'ср'],
     forms: {
       'среда': 1,
@@ -766,9 +780,10 @@ class Tokens {
       'ср': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.wednesday,
   );
 
-  static const PluralToken thursday = PluralToken(
+  static const OrderPluralTokenParser thursday = OrderPluralTokenParser(
     normalForms: ['четверг', 'чт'],
     forms: {
       'четверг': 1,
@@ -784,9 +799,10 @@ class Tokens {
       'чт': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.thursday,
   );
 
-  static const PluralToken friday = PluralToken(
+  static const OrderPluralTokenParser friday = OrderPluralTokenParser(
     normalForms: ['пятница', 'пт'],
     forms: {
       'пятница': 1,
@@ -802,9 +818,10 @@ class Tokens {
       'пт': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.friday,
   );
 
-  static const PluralToken saturday = PluralToken(
+  static const OrderPluralTokenParser saturday = OrderPluralTokenParser(
     normalForms: ['суббота', 'сб'],
     forms: {
       'суббота': 1,
@@ -820,9 +837,10 @@ class Tokens {
       'сб': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.saturday,
   );
 
-  static const PluralToken sunday = PluralToken(
+  static const OrderPluralTokenParser sunday = OrderPluralTokenParser(
     normalForms: ['воскресенье', 'вс'],
     forms: {
       'воскресенье': 1,
@@ -837,9 +855,10 @@ class Tokens {
       'вс': 1,
     },
     metaSymbol: 'D',
+    order: DateTime.sunday,
   );
 
-  static const PluralToken daytimeDay = PluralToken(
+  static const PluralTokenParser daytimeDay = PluralTokenParser(
     normalForms: ['днём', 'днем'],
     forms: {
       'день': 1,
@@ -857,7 +876,7 @@ class Tokens {
     metaSymbol: 'a',
   );
 
-  static const PluralToken timeFrom = PluralToken(
+  static const PluralTokenParser timeFrom = PluralTokenParser(
     normalForms: ['в', 'с'],
     forms: {
       'в': 0,
@@ -868,7 +887,7 @@ class Tokens {
     metaSymbol: 'f',
   );
 
-  static const PluralToken timeTo = PluralToken(
+  static const PluralTokenParser timeTo = PluralTokenParser(
     normalForms: ['до', 'по'],
     forms: {
       'до': 0,
@@ -877,7 +896,7 @@ class Tokens {
     metaSymbol: 't',
   );
 
-  static const PluralToken timeOn = PluralToken(
+  static const PluralTokenParser timeOn = PluralTokenParser(
     normalForms: ['на'],
     forms: {
       'на': 0,
@@ -885,27 +904,29 @@ class Tokens {
     metaSymbol: 'o',
   );
 
-  static Token yearNumbers = IntegerToken(
+  static TokenParser yearNumbers = IntegerTokenParser(
     validator: (int integer) {
       return integer >= 1900 && integer <= 9999;
     },
     metaSymbol: '1',
   );
 
-  static Token numbers = IntegerToken(
+  static TokenParser numbers = IntegerTokenParser(
     validator: (int integer) {
       return integer >= 0 && integer < 1900;
     },
     metaSymbol: '0',
   );
 
-  static Token and = PluralToken(
+  static TokenParser and = PluralTokenParser(
     normalForms: ['и'],
-    forms: {},
+    forms: {
+      'и': 0,
+    },
     metaSymbol: 'N',
   );
 
-  static const List<Token> months = [
+  static const List<OrderPluralTokenParser> months = [
     january,
     february,
     march,
@@ -920,7 +941,7 @@ class Tokens {
     december,
   ];
 
-  static const List<Token> daysOfWeek = [
+  static const List<OrderPluralTokenParser> daysOfWeek = [
     monday,
     tuesday,
     wednesday,
@@ -930,7 +951,7 @@ class Tokens {
     sunday,
   ];
 
-  static List<Token> all = [
+  static List<TokenParser> all = [
     after,
     afterPostfix,
     previousPostfix,
@@ -982,5 +1003,6 @@ class Tokens {
     timeOn,
     yearNumbers,
     numbers,
+    and,
   ];
 }

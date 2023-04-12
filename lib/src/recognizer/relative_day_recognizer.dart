@@ -1,0 +1,29 @@
+import '../data.dart';
+import '../hors.dart';
+import 'recognizer.dart';
+
+class RelativeDayRecognizer extends Recognizer {
+  const RelativeDayRecognizer();
+
+  @override
+  RegExp get pattern => RegExp(r'[2-6]');
+
+  @override
+  List<Token>? parse(
+    DateTime fromDatetime,
+    Match match,
+    List<Token> tokens,
+  ) {
+    final token = tokens.first;
+    int? relativeDay = int.tryParse(token.symbol);
+    if (relativeDay == null) return null;
+    relativeDay -= 4;
+    return [
+      token.toDateToken(
+        AbstractDate.builder(
+          date: fromDatetime.add(Duration(days: relativeDay)),
+        ).build(),
+      ),
+    ];
+  }
+}
