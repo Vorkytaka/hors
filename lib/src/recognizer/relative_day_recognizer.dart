@@ -18,12 +18,10 @@ class RelativeDayRecognizer extends Recognizer {
     int? relativeDay = int.tryParse(token.symbol);
     if (relativeDay == null) return null;
     relativeDay -= 4;
-    return [
-      token.toDateToken(
-        AbstractDate.builder(
-          date: fromDatetime.add(Duration(days: relativeDay)),
-        ).build(),
-      ),
-    ];
+    final builder = AbstractDate.builder(
+      date: fromDatetime.add(Duration(days: relativeDay)),
+    );
+    builder.fixDownTo(FixPeriod.day);
+    return [token.toDateToken(builder.build())];
   }
 }

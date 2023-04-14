@@ -104,7 +104,7 @@ class TimeRecognizer extends Recognizer {
     builder.time = Duration(hours: hours, minutes: minutes);
 
     final start = tokens.first.start;
-    final end = tokens.first.end;
+    final end = tokens.last.end;
     return [
       if (match.group(2) == 't')
         TokenParsers.timeTo.toMaybeDateToken(start, end),

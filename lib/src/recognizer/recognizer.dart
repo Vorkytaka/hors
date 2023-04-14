@@ -56,6 +56,7 @@ abstract class Recognizer {
   }
 }
 
+// todo: reverse?
 List<Token>? matchAll(
   RegExp regexp,
   List<Token> tokens,
