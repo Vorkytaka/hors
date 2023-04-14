@@ -502,9 +502,31 @@ List<Token>? collapseClosest(
   }
 
   final int duplicateGroup;
-  // todo: duplicate groups
+  if (firstDate.date.duplicateGroup != null) {
+    duplicateGroup = firstDate.date.duplicateGroup!;
+  } else if (secondDate.date.duplicateGroup != null) {
+    duplicateGroup = secondDate.date.duplicateGroup!;
+  } else {
+    // todo: don't use random
+    duplicateGroup = _random.nextInt(9223372036854775807);
+  }
+
+  // todo: some code improvement
+  newFirst = DateToken(
+    start: newFirst.start,
+    end: newFirst.end,
+    date: newFirst.date.withDuplicateGroup(duplicateGroup),
+  );
+
+  newSecond = DateToken(
+    start: newSecond.start,
+    end: newSecond.end,
+    date: newSecond.date.withDuplicateGroup(duplicateGroup),
+  );
 
   return tokens
     ..[firstDateIndex] = newFirst
     ..[secondDateIndex] = newSecond;
 }
+
+Random _random = Random();
