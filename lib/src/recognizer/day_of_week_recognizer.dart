@@ -8,11 +8,11 @@ class DayOfWeekRecognizer extends Recognizer {
   const DayOfWeekRecognizer();
 
   @override
-  RegExp get pattern =>
+  RegExp get regexp =>
       RegExp(r'([usxy])?(D)'); // [в] (следующий/этот/предыдущий) понедельник
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

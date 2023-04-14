@@ -7,11 +7,11 @@ class RelativeDateRecognizer extends Recognizer {
   const RelativeDateRecognizer();
 
   @override
-  RegExp get pattern => RegExp(
+  RegExp get regexp => RegExp(
       r'([usxy])([Ymwd])'); // [в/на] следующей/этой/предыдущей год/месяц/неделе/день
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

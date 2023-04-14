@@ -6,10 +6,10 @@ class YearRecognizer extends Recognizer {
   const YearRecognizer();
 
   @override
-  RegExp get pattern => RegExp(r'(1)Y?|(0)Y'); // [в] 15 году/2017 (году)
+  RegExp get regexp => RegExp(r'(1)Y?|(0)Y'); // [в] 15 году/2017 (году)
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

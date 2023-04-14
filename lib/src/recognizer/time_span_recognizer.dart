@@ -7,11 +7,11 @@ class TimeSpanRecognizer extends Recognizer {
   const TimeSpanRecognizer();
 
   @override
-  RegExp get pattern => RegExp(
+  RegExp get regexp => RegExp(
       r'(i)?((0?[Ymwdhe]N?)+)([bl])?'); // (через) год и месяц и 2 дня 4 часа 10 минут (спустя/назад)
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

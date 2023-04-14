@@ -9,11 +9,11 @@ class PartOfDayRecognizer extends Recognizer {
   const PartOfDayRecognizer();
 
   @override
-  RegExp get pattern => RegExp(
+  RegExp get regexp => RegExp(
       r'(@)?f?([ravgdn])f?(@)?'); // (дата) (в/с) утром/днём/вечером/ночью (в/с) (дата)
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

@@ -8,11 +8,11 @@ class MonthRecognizer extends Recognizer {
   const MonthRecognizer();
 
   @override
-  RegExp get pattern =>
+  RegExp get regexp =>
       RegExp(r'([usxy])?M'); // [в] (прошлом|этом|следующем) марте
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

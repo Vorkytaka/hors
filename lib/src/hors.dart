@@ -34,25 +34,17 @@ class Hors {
     final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)((N?[fo]?)(@))');
     final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)((N?[fot]?)(@))');
 
-    var newTokens = matchAll(
+    data = parsing(
+      data,
       startPeriodsPattern,
-      data.tokens,
       (match, tokens) => collapseDates(fromDatetime, match, tokens),
     );
 
-    data = newTokens != null
-        ? ParsingData(sourceText: data.sourceText, tokens: newTokens)
-        : data;
-
-    newTokens = matchAll(
+    data = parsing(
+      data,
       endPeriodsPattern,
-      data.tokens,
       (match, tokens) => collapseDates(fromDatetime, match, tokens),
     );
-
-    data = newTokens != null
-        ? ParsingData(sourceText: data.sourceText, tokens: newTokens)
-        : data;
 
     print(data);
   }
@@ -367,8 +359,7 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
       cover.isFixed(FixPeriod.timeUncertain)) {
     builder.fix(FixPeriod.timeUncertain);
     if (base.isFixed(FixPeriod.time)) {
-      final offset =
-          cover.time!.hours <= 12 && base.time!.hours > 12 ? 12 : 0;
+      final offset = cover.time!.hours <= 12 && base.time!.hours > 12 ? 12 : 0;
       builder.time = Duration(
         hours: cover.time!.hours + offset,
         minutes: cover.time!.minutes,

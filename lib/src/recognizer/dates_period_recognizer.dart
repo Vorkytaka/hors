@@ -8,10 +8,10 @@ class DatesPeriodRecognizer extends Recognizer {
   const DatesPeriodRecognizer();
 
   @override
-  RegExp get pattern => RegExp(r'f?(0)[ot]0([M#])'); // с 26 до 27 января/числа
+  RegExp get regexp => RegExp(r'f?(0)[ot]0([M#])'); // с 26 до 27 января/числа
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

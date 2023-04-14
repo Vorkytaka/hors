@@ -7,10 +7,10 @@ class HolidayRecognizer extends Recognizer {
   const HolidayRecognizer();
 
   @override
-  RegExp get pattern => RegExp(r'W');
+  RegExp get regexp => RegExp(r'W');
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

@@ -9,11 +9,11 @@ class DayOfMonthRecognizer extends Recognizer {
   const DayOfMonthRecognizer();
 
   @override
-  RegExp get pattern =>
+  RegExp get regexp =>
       RegExp(r'((0N?)+)([M#])'); // 24, 25, 26... и 27 января/числа
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

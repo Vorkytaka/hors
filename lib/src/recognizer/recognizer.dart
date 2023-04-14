@@ -30,30 +30,40 @@ abstract class Recognizer {
     PartOfDayRecognizer(),
   ];
 
-  RegExp get pattern;
+  RegExp get regexp;
 
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,
   );
 
-  ParsingData recognize(ParsingData data, DateTime fromDatetime) {
-    final newTokens = matchAll(
-      pattern,
-      data.tokens,
-      (match, tokens) => parse(fromDatetime, match, tokens),
-    );
+  ParsingData recognize(ParsingData data, DateTime fromDatetime) => parsing(
+        data,
+        regexp,
+        (match, tokens) => parser(fromDatetime, match, tokens),
+      );
+}
 
-    if (newTokens == null) {
-      return data;
-    }
+ParsingData parsing(
+  ParsingData data,
+  RegExp regexp,
+  List<Token>? Function(Match match, List<Token> tokens) parser,
+) {
+  final newTokens = matchAll(
+    regexp,
+    data.tokens,
+    parser,
+  );
 
-    return ParsingData(
-      sourceText: data.sourceText,
-      tokens: newTokens,
-    );
+  if (newTokens == null) {
+    return data;
   }
+
+  return ParsingData(
+    sourceText: data.sourceText,
+    tokens: newTokens,
+  );
 }
 
 // todo: reverse?

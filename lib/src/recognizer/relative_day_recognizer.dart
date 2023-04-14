@@ -6,10 +6,10 @@ class RelativeDayRecognizer extends Recognizer {
   const RelativeDayRecognizer();
 
   @override
-  RegExp get pattern => RegExp(r'[2-6]');
+  RegExp get regexp => RegExp(r'[2-6]');
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,

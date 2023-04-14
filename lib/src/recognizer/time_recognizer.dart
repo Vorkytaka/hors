@@ -9,11 +9,11 @@ class TimeRecognizer extends Recognizer {
   const TimeRecognizer();
 
   @override
-  RegExp get pattern => RegExp(
+  RegExp get regexp => RegExp(
       r'([rvgd])?([fot])?([QH])?(h|(0)(h)?)((0)e?)?([rvgd])?'); // (в/с/до) (половину/четверть) час/9 (часов) (30 (минут)) (утра/дня/вечера/ночи)
 
   @override
-  List<Token>? parse(
+  List<Token>? parser(
     DateTime fromDatetime,
     Match match,
     List<Token> tokens,
