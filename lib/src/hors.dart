@@ -113,6 +113,14 @@ class AbstractDateBuilder {
     this.spanDirection = 0,
   });
 
+  AbstractDateBuilder.fromDate(AbstractDate date)
+      : date = date.date,
+        time = date.time,
+        span = date.span,
+        fixes = date.fixes,
+        fixDayOfWeek = date.fixDayOfWeek,
+        spanDirection = date.spanDirection;
+
   AbstractDate build() {
     return AbstractDate._(
       date: date,
@@ -160,7 +168,7 @@ class AbstractDate {
   final Duration? span;
   final int fixes;
   final bool fixDayOfWeek;
-  final int? spanDirection;
+  final int spanDirection;
 
   AbstractDate._({
     this.date,
@@ -168,7 +176,7 @@ class AbstractDate {
     this.span,
     this.fixes = 0,
     this.fixDayOfWeek = false,
-    this.spanDirection,
+    this.spanDirection = 0,
   });
 
   static AbstractDateBuilder builder({
@@ -258,7 +266,7 @@ List<Token>? collapseDates(
 
 bool canCollapse(AbstractDate first, AbstractDate second) {
   if ((first.fixes & second.fixes) != 0) return false;
-  return first.spanDirection != -(second.spanDirection ?? 0) ||
+  return first.spanDirection != -second.spanDirection ||
       first.spanDirection == 0;
 }
 
@@ -277,7 +285,7 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
   );
 
   if (base.spanDirection != 0 && cover.spanDirection != 0) {
-    builder.spanDirection = base.spanDirection! + cover.spanDirection!;
+    builder.spanDirection = base.spanDirection + cover.spanDirection;
   }
 
   if (!base.isFixed(FixPeriod.year) && cover.isFixed(FixPeriod.year)) {
@@ -371,7 +379,7 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
   }
 
   if (timeGot && base.spanDirection != 0 && cover.spanDirection == 0) {
-    if (base.spanDirection! > 0) {
+    if (base.spanDirection > 0) {
       builder.span = base.time! + base.time!;
     } else {
       builder.span = base.time! - base.time!;
@@ -403,4 +411,42 @@ DateTime takeDayOfWeekFrom(
   int diff = from.weekday - current.weekday;
   if (forward && diff < 0) diff += 7;
   return current.add(Duration(days: diff));
+}
+
+// todo: нужны примеры для теста
+List<DateToken> takeFromAdjacent(DateToken firstToken, DateToken secondToken) {
+  final firstDateCopy = AbstractDateBuilder.fromDate(firstToken.date)
+    ..fixes &= secondToken.date.fixes;
+  final firstCopy = DateToken(
+    start: firstToken.start,
+    end: firstToken.end,
+    date: firstDateCopy.build(),
+  );
+
+  final secondDateCopy = AbstractDateBuilder.fromDate(secondToken.date)
+    ..fixes &= firstToken.date.fixes;
+  final secondCopy = DateToken(
+    start: secondToken.start,
+    end: secondToken.end,
+    date: secondDateCopy.build(),
+  );
+
+  final newTokens = <DateToken>[];
+  if (firstToken.date.minFixed.index > secondCopy.date.minFixed.index) {
+    final token = collapse(firstToken, secondCopy, false);
+    newTokens.add(token ?? firstToken);
+  } else {
+    final token = collapse(secondCopy, firstToken, false);
+    newTokens.add(token ?? firstToken);
+  }
+
+  if (secondToken.date.minFixed.index > firstCopy.date.minFixed.index) {
+    final token = collapse(secondToken, firstCopy, false);
+    newTokens.add(token ?? secondToken);
+  } else {
+    final token = collapse(firstCopy, secondToken, false);
+    newTokens.add(token ?? secondToken);
+  }
+
+  return newTokens.toList(growable: false);
 }
