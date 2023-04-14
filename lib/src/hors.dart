@@ -17,7 +17,7 @@ class Hors {
   static final Pattern _extraSymbols = RegExp('[^0-9а-яё-]');
   static final Pattern _allowSymbols = RegExp('[а-яА-ЯёЁa-zA-Z0-9-]+');
 
-  void x(String text, DateTime fromDatetime) {
+  void x(String text, DateTime fromDatetime, [int closestSteps = 4]) {
     ParsingData data = ParsingData(
       sourceText: text,
       tokens: _allowSymbols
@@ -45,6 +45,15 @@ class Hors {
       endPeriodsPattern,
       (match, tokens) => collapseDates(fromDatetime, match, tokens),
     );
+
+    if (closestSteps > 1) {
+      final regexp = RegExp('(@)[^@t]{1,$closestSteps}(@)');
+      data = parsing(
+        data,
+        regexp,
+        (match, tokens) => collapseClosest(match, tokens),
+      );
+    }
 
     print(data);
   }
@@ -169,6 +178,7 @@ class AbstractDate {
   final int fixes;
   final bool fixDayOfWeek;
   final int spanDirection;
+  final int? duplicateGroup;
 
   AbstractDate._({
     this.date,
@@ -177,6 +187,7 @@ class AbstractDate {
     this.fixes = 0,
     this.fixDayOfWeek = false,
     this.spanDirection = 0,
+    this.duplicateGroup,
   });
 
   static AbstractDateBuilder builder({
@@ -208,6 +219,18 @@ class AbstractDate {
     }
 
     return FixPeriod.none;
+  }
+
+  AbstractDate withDuplicateGroup(int group) {
+    return AbstractDate._(
+      date: date,
+      time: time,
+      span: span,
+      fixes: fixes,
+      fixDayOfWeek: fixDayOfWeek,
+      spanDirection: spanDirection,
+      duplicateGroup: group,
+    );
   }
 }
 
@@ -449,4 +472,39 @@ List<DateToken> takeFromAdjacent(DateToken firstToken, DateToken secondToken) {
   }
 
   return newTokens.toList(growable: false);
+}
+
+List<Token>? collapseClosest(
+  Match match,
+  List<Token> tokens,
+) {
+  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+  final secondDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    firstDateIndex + 1,
+  );
+
+  final firstDate = tokens[firstDateIndex] as DateToken;
+  final secondDate = tokens[secondDateIndex] as DateToken;
+
+  if (!canCollapse(firstDate.date, secondDate.date)) {
+    return null;
+  }
+
+  DateToken newFirst;
+  DateToken newSecond;
+  if (firstDate.date.minFixed.index > secondDate.date.minFixed.index) {
+    newFirst = collapse(firstDate, secondDate, true) ?? firstDate;
+    newSecond = secondDate;
+  } else {
+    newFirst = firstDate;
+    newSecond = collapse(secondDate, firstDate, true) ?? secondDate;
+  }
+
+  final int duplicateGroup;
+  // todo: duplicate groups
+
+  return tokens
+    ..[firstDateIndex] = newFirst
+    ..[secondDateIndex] = newSecond;
 }
