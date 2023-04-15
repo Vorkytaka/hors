@@ -561,13 +561,11 @@ void getFinalTokens(
   final regexp = RegExp(r'(([fo]?(@)t(@))|([fo]?(@)))');
   final tokens = regexp
       .allMatches(data.pattern)
-      .map(
-        (match) => parseFinalToken(
-          fromDatetime,
-          match,
-          data.tokens.sublist(match.start, match.end),
-        ),
-      )
+      .map((match) => parseFinalToken(
+            fromDatetime,
+            match,
+            data.tokens.sublist(match.start, match.end),
+          ))
       .toList(growable: false);
 
   print(tokens);
@@ -662,6 +660,7 @@ class DateTimeToken {
   final int start;
   final int end;
   final DateTimeTokenType type;
+  final int? duplicateGroup;
 
   const DateTimeToken({
     required this.date,
@@ -671,6 +670,7 @@ class DateTimeToken {
     required this.start,
     required this.end,
     required this.type,
+    this.duplicateGroup,
   });
 }
 
@@ -682,6 +682,7 @@ class DateTimeTokenBuilder {
   int start;
   int end;
   DateTimeTokenType type = DateTimeTokenType.fixed;
+  int? duplicateGroup;
 
   DateTimeTokenBuilder({
     required this.start,
@@ -697,6 +698,7 @@ class DateTimeTokenBuilder {
       start: start,
       end: end,
       type: type,
+      duplicateGroup: duplicateGroup,
     );
   }
 }
@@ -758,6 +760,8 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
     start: token.start,
     end: token.end,
   );
+
+  builder.duplicateGroup = token.date.duplicateGroup;
 
   // ignore: missing_enum_constant_in_switch
   switch (dateBuilder.maxFixed) {
