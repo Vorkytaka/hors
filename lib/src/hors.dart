@@ -1,6 +1,8 @@
 import 'dart:math';
 
 import 'package:hors/src/data.dart';
+import 'package:hors/src/utils.dart';
+import 'package:meta/meta.dart';
 
 import 'recognizer/recognizer.dart';
 import 'token/token_parser.dart';
@@ -57,6 +59,8 @@ class Hors {
         },
       );
     }
+
+    getFinalTokens(fromDatetime, data);
 
     print(data);
   }
@@ -172,6 +176,16 @@ class AbstractDateBuilder {
 
     return log(maxVal).toInt();
   }
+
+  FixPeriod get maxFixed {
+    for (final period in FixPeriod.values) {
+      if (isFixed(period)) {
+        return period;
+      }
+    }
+
+    return FixPeriod.none;
+  }
 }
 
 class AbstractDate {
@@ -216,6 +230,16 @@ class AbstractDate {
 
   FixPeriod get minFixed {
     for (final period in FixPeriod.values.reversed) {
+      if (isFixed(period)) {
+        return period;
+      }
+    }
+
+    return FixPeriod.none;
+  }
+
+  FixPeriod get maxFixed {
+    for (final period in FixPeriod.values) {
       if (isFixed(period)) {
         return period;
       }
@@ -306,9 +330,7 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
   }
 
   // todo: if base date is null?
-  final builder = AbstractDate.builder(
-    date: base.date,
-  );
+  final builder = AbstractDateBuilder.fromDate(base);
 
   if (base.spanDirection != 0 && cover.spanDirection != 0) {
     builder.spanDirection = base.spanDirection + cover.spanDirection;
@@ -531,3 +553,282 @@ List<Token>? collapseClosest(
     ..[firstDateIndex] = newFirst
     ..[secondDateIndex] = newSecond;
 }
+
+void getFinalTokens(
+  DateTime fromDatetime,
+  ParsingData data,
+) {
+  final regexp = RegExp(r'(([fo]?(@)t(@))|([fo]?(@)))');
+  final tokens = regexp
+      .allMatches(data.pattern)
+      .map(
+        (match) => parseFinalToken(
+          fromDatetime,
+          match,
+          data.tokens.sublist(match.start, match.end),
+        ),
+      )
+      .toList(growable: false);
+
+  print(tokens);
+}
+
+DateTimeToken parseFinalToken(
+  DateTime fromDatetime,
+  Match match,
+  List<Token> tokens,
+) {
+  final DateTimeToken token;
+  if (match.group(3) != null && match.group(4) != null) {
+    // if we match a period
+    // from date to date
+    final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+    final secondDateIndex = tokens.indexWhere(
+      (token) => token.symbol == '@',
+      firstDateIndex + 1,
+    );
+
+    DateToken firstDate = tokens[firstDateIndex] as DateToken;
+    DateToken secondDate = tokens[secondDateIndex] as DateToken;
+
+    final dates = takeFromAdjacent(firstDate, secondDate);
+    firstDate = dates[0];
+    secondDate = dates[1];
+
+    final fromToken = convertToken(firstDate, fromDatetime);
+    final toToken = convertToken(secondDate, fromDatetime);
+    DateTime dateTo = toToken.date;
+
+    final resolution = secondDate.date.maxFixed;
+    while (dateTo.isBefore(fromToken.date)) {
+      // ignore: missing_enum_constant_in_switch
+      switch (resolution) {
+        case FixPeriod.time:
+          dateTo = dateTo.add(Duration(days: 1));
+          break;
+        case FixPeriod.day:
+          dateTo = dateTo.add(Duration(days: 7));
+          break;
+        case FixPeriod.week:
+          // todo: add month?
+          dateTo = dateTo.add(Duration(days: 30));
+          break;
+        case FixPeriod.month:
+          // todo: add year?
+          dateTo = dateTo.add(Duration(days: 365));
+          break;
+        default:
+          dateTo = dateTo.add(Duration(hours: 12));
+          break;
+      }
+    }
+
+    token = DateTimeToken(
+      date: fromToken.date,
+      dateTo: dateTo,
+      start: fromToken.start,
+      end: toToken.end,
+      type: DateTimeTokenType.period,
+      hasTime: fromToken.hasTime || toToken.hasTime,
+    );
+  } else {
+    // this is single date
+    final dateToken =
+        tokens.firstWhere((token) => token.symbol == '@') as DateToken;
+    token = convertToken(dateToken, fromDatetime);
+    print(token);
+  }
+
+  // todo start and end
+  // todo index to text
+
+  return token;
+}
+
+enum DateTimeTokenType {
+  fixed,
+  period,
+  spanForward,
+  spanBackward,
+}
+
+// todo duplicates
+@immutable
+class DateTimeToken {
+  final DateTime date;
+  final DateTime? dateTo;
+  final Duration? span;
+  final bool hasTime;
+  final int start;
+  final int end;
+  final DateTimeTokenType type;
+
+  const DateTimeToken({
+    required this.date,
+    this.dateTo,
+    this.span,
+    this.hasTime = false,
+    required this.start,
+    required this.end,
+    required this.type,
+  });
+}
+
+class DateTimeTokenBuilder {
+  DateTime? date;
+  DateTime? dateTo;
+  Duration? span;
+  bool hasTime = false;
+  int start;
+  int end;
+  DateTimeTokenType type = DateTimeTokenType.fixed;
+
+  DateTimeTokenBuilder({
+    required this.start,
+    required this.end,
+  });
+
+  DateTimeToken build() {
+    return DateTimeToken(
+      date: date!,
+      dateTo: dateTo,
+      span: span,
+      hasTime: hasTime,
+      start: start,
+      end: end,
+      type: type,
+    );
+  }
+}
+
+DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
+  final minFixed = token.date.minFixed;
+  final dateBuilder = AbstractDateBuilder.fromDate(token.date);
+  dateBuilder.fixDownTo(minFixed);
+
+  // ignore: missing_enum_constant_in_switch
+  switch (minFixed) {
+    case FixPeriod.time:
+    case FixPeriod.timeUncertain:
+      dateBuilder.date = fromDatetime;
+      break;
+    case FixPeriod.day:
+      final userDow = fromDatetime.weekday;
+      final dateDow = dateBuilder.date!.weekday;
+      int diff = dateDow - userDow;
+      if (diff <= 0) {
+        diff += 7;
+      }
+      final newDate = fromDatetime.add(Duration(days: diff));
+      dateBuilder.date = DateTime(
+        newDate.year,
+        newDate.month,
+        newDate.day,
+      );
+      break;
+    case FixPeriod.month:
+      dateBuilder.date = DateTime(
+        fromDatetime.isAfter(dateBuilder.date!)
+            ? fromDatetime.year + 1
+            : fromDatetime.year,
+        dateBuilder.date!.month,
+        dateBuilder.date!.day,
+      );
+      break;
+  }
+
+  if (dateBuilder.isFixed(FixPeriod.time) ||
+      dateBuilder.isFixed(FixPeriod.timeUncertain)) {
+    dateBuilder.date = DateTime(
+      dateBuilder.date!.year,
+      dateBuilder.date!.month,
+      dateBuilder.date!.day,
+      dateBuilder.time!.hours,
+      dateBuilder.time!.minutes,
+    );
+  } else {
+    dateBuilder.date = DateTime(
+      dateBuilder.date!.year,
+      dateBuilder.date!.month,
+      dateBuilder.date!.day,
+    );
+  }
+
+  final builder = DateTimeTokenBuilder(
+    start: token.start,
+    end: token.end,
+  );
+
+  // ignore: missing_enum_constant_in_switch
+  switch (dateBuilder.maxFixed) {
+    case FixPeriod.time:
+    case FixPeriod.timeUncertain:
+      builder.type = DateTimeTokenType.fixed;
+      builder.date = dateBuilder.date;
+      builder.dateTo = dateBuilder.date;
+      builder.hasTime = true;
+      break;
+    case FixPeriod.day:
+      builder.type = DateTimeTokenType.fixed;
+      builder.date = dateBuilder.date;
+      builder.dateTo = dateBuilder.date!.add(almostOneDay);
+      break;
+    case FixPeriod.week:
+      final weekday = dateBuilder.date!.weekday;
+      builder.type = DateTimeTokenType.period;
+      builder.date = dateBuilder.date!.add(Duration(days: 1 - weekday));
+      builder.dateTo =
+          dateBuilder.date!.add(Duration(days: 7 - weekday)).add(almostOneDay);
+      break;
+    case FixPeriod.month:
+      builder.type = DateTimeTokenType.period;
+      builder.date = DateTime(
+        dateBuilder.date!.year,
+        dateBuilder.date!.month,
+        1,
+      );
+      builder.dateTo = DateTime(
+        dateBuilder.date!.year,
+        dateBuilder.date!.month,
+        getDaysInMonth(dateBuilder.date!.year, dateBuilder.date!.month),
+        23,
+        59,
+        59,
+        999,
+      );
+      break;
+    case FixPeriod.year:
+      builder.type = DateTimeTokenType.period;
+      builder.date = DateTime(
+        dateBuilder.date!.year,
+        1,
+        1,
+      );
+      builder.dateTo = DateTime(
+        dateBuilder.date!.year,
+        12,
+        31,
+        23,
+        59,
+        59,
+        999,
+      );
+      break;
+  }
+
+  if (dateBuilder.spanDirection != 0) {
+    builder.type = dateBuilder.spanDirection > 0
+        ? DateTimeTokenType.spanForward
+        : DateTimeTokenType.spanBackward;
+    builder.span = dateBuilder.span;
+  }
+
+  return builder.build();
+}
+
+const Duration almostOneDay = Duration(
+  hours: 23,
+  minutes: 59,
+  seconds: 59,
+  milliseconds: 999,
+);

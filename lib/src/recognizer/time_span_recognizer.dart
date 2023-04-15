@@ -18,7 +18,7 @@ class TimeSpanRecognizer extends Recognizer {
   ) {
     final prefix = match.group(1);
     final postfix = match.group(4);
-    if (prefix != null && postfix != null) {
+    if (!((prefix != null) ^ (postfix != null))) {
       return null;
     }
 
