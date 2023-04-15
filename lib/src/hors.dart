@@ -48,10 +48,13 @@ class Hors {
 
     if (closestSteps > 1) {
       final regexp = RegExp('(@)[^@t]{1,$closestSteps}(@)');
+      int lastGroup = 0;
       data = parsing(
         data,
         regexp,
-        (match, tokens) => collapseClosest(match, tokens),
+        (match, tokens) {
+          return collapseClosest(match, tokens, lastGroup++);
+        },
       );
     }
 
@@ -477,6 +480,7 @@ List<DateToken> takeFromAdjacent(DateToken firstToken, DateToken secondToken) {
 List<Token>? collapseClosest(
   Match match,
   List<Token> tokens,
+  int group,
 ) {
   final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
   final secondDateIndex = tokens.indexWhere(
@@ -507,8 +511,7 @@ List<Token>? collapseClosest(
   } else if (secondDate.date.duplicateGroup != null) {
     duplicateGroup = secondDate.date.duplicateGroup!;
   } else {
-    // todo: don't use random
-    duplicateGroup = _random.nextInt(9223372036854775807);
+    duplicateGroup = group;
   }
 
   // todo: some code improvement
@@ -528,5 +531,3 @@ List<Token>? collapseClosest(
     ..[firstDateIndex] = newFirst
     ..[secondDateIndex] = newSecond;
 }
-
-Random _random = Random();
