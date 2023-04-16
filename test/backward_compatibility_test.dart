@@ -82,5 +82,118 @@ void main() {
     },
   );
 
-  test('', () => null);
+  test('Daytime', () {
+    final result = hors.parse(
+      'Завтра в час обед и продлится он час с небольшим',
+      DateTime(2019, 10, 14),
+      3,
+    );
+
+    expect(result.tokens.length, 1);
+    final date = result.tokens.first;
+    expect(date.type, DateTimeTokenType.fixed);
+    expect(date.date.year, 2019);
+    expect(date.date.month, 10);
+    expect(date.date.day, 15);
+    expect(date.date.hour, 13);
+  });
+
+  test(
+    'Nighttime',
+    () {
+      final result = hors.parse(
+        'Завтра в 2 ночи полнолуние, а затем в 3 часа ночи новолуние и наконец в 12 часов ночи игра.',
+        DateTime(2020, 01, 01),
+      );
+
+      expect(result.tokens.length, 3);
+
+      final firstDate = result.tokens[0];
+      expect(firstDate.type, DateTimeTokenType.fixed);
+      expect(firstDate.date.hour, 2);
+
+      // todo: wrong date?
+      final secondDate = result.tokens[1];
+      expect(secondDate.type, DateTimeTokenType.fixed);
+      expect(secondDate.date.hour, 3);
+
+      // todo: wrong date?
+      final thirdDate = result.tokens[2];
+      expect(thirdDate.type, DateTimeTokenType.fixed);
+      expect(thirdDate.date.hour, 0);
+      expect(thirdDate.date.day, 1);
+    },
+  );
+
+  test(
+    'Next Month',
+    () {
+      final result = hors.parse(
+        'В следующем месяце',
+        DateTime(2019, 10, 14),
+        3,
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.year, 2019);
+      expect(date.date.month, 11);
+      expect(date.date.day, 1);
+      expect(date.dateTo?.month, 11);
+      expect(date.dateTo?.day, 30);
+    },
+  );
+
+  test(
+    'Evening',
+    () {
+      final result = hors.parse(
+        'Завтра вечером кино',
+        DateTime(2019, 10, 16),
+        3,
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.hour, 15);
+      expect(date.dateTo?.hour, 23);
+    },
+  );
+
+  test(
+    'Collapse Complex',
+    () {
+      final result = hors.parse(
+        'В понедельник в 9 и 10 вечера',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      expect(result.tokens.length, 2);
+
+      final firstDate = result.tokens[0];
+      expect(firstDate.date.year, 2019);
+      expect(firstDate.date.day, 14);
+      expect(firstDate.date.hour, 21);
+
+      final secondDate = result.tokens[1];
+      expect(secondDate.date.day, 14);
+      expect(secondDate.date.hour, 22);
+    },
+  );
+
+  // test(
+  //   '',
+  //   () {
+  //     final result = hors.parse(
+  //       text,
+  //       fromDatetime,
+  //     );
+  //
+  //     expect(result.tokens.length, 1);
+  //     final date = result.tokens.first;
+  //   },
+  // );
 }

@@ -51,6 +51,18 @@ class Hors {
       (match, tokens) => collapseDates(fromDatetime, match, tokens),
     );
 
+    data = parsing(
+      data,
+      endPeriodsPattern,
+      (match, tokens) => takeFromA(fromDatetime, match, tokens),
+    );
+
+    data = parsing(
+      data,
+      startPeriodsPattern,
+      (match, tokens) => takeFromA(fromDatetime, match, tokens),
+    );
+
     if (closestSteps > 1) {
       final regexp = RegExp('(@)[^@t]{1,$closestSteps}(@)');
       int lastGroup = 0;
@@ -492,6 +504,30 @@ DateTime takeDayOfWeekFrom(
   int diff = from.weekday - current.weekday;
   if (forward && diff < 0) diff += 7;
   return current.add(Duration(days: diff));
+}
+
+// todo
+List<Token> takeFromA(
+  DateTime fromDatetime,
+  Match match,
+  List<Token> tokens,
+) {
+  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+  final secondDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    firstDateIndex + 1,
+  );
+
+  final firstToken = tokens[firstDateIndex] as DateToken;
+  final secondToken = tokens[secondDateIndex] as DateToken;
+
+  final newTokens = takeFromAdjacent(firstToken, secondToken, false);
+  final newFirstToken = newTokens[0];
+  final newSecondToken = newTokens[1];
+
+  return tokens
+    ..[firstDateIndex] = newFirstToken
+    ..[secondDateIndex] = newSecondToken;
 }
 
 // todo: нужны примеры для теста
