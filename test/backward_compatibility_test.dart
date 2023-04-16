@@ -184,6 +184,76 @@ void main() {
     },
   );
 
+  test(
+    'Collapse Complex Reverse',
+    () {
+      final result = hors.parse(
+        'В понедельник в 10 и 9 вечера',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      expect(result.tokens.length, 2);
+
+      final firstDate = result.tokens[0];
+      expect(firstDate.date.year, 2019);
+      expect(firstDate.date.day, 14);
+      expect(firstDate.date.hour, 22);
+
+      final secondDate = result.tokens[1];
+      expect(secondDate.date.day, 14);
+      expect(secondDate.date.hour, 21);
+    },
+  );
+
+  test(
+    'Multiple Simple',
+    () {
+      final result = hors.parse(
+        'Позавчера в 6:30 состоялось совещание, а завтра днём будет хорошая погода.',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      expect(result.tokens.length, 2);
+
+      final firstDate = result.tokens[0];
+      expect(firstDate.date.year, 2019);
+      expect(firstDate.date.day, 11);
+      expect(firstDate.date.hour, 6);
+      expect(firstDate.date.minute, 30);
+
+      final secondDate = result.tokens[1];
+      expect(secondDate.date.year, 2019);
+      expect(secondDate.date.day, 14);
+      expect(secondDate.hasTime, true);
+    },
+  );
+
+  test(
+    'Collapse Direction',
+    () {
+      final inputs = [
+        'В следующем месяце с понедельника буду ходить в спортзал!',
+        'С понедельника в следующем месяце буду ходить в спортзал!',
+      ];
+
+      for (final input in inputs) {
+        final result = hors.parse(
+          input,
+          DateTime(2019, 10, 15),
+          3,
+        );
+
+        expect(result.tokens.length, 1);
+        final date = result.tokens.first;
+        expect(date.date.year, 2019);
+        expect(date.date.month, 11);
+        expect(date.date.day, 4);
+      }
+    },
+  );
+
   // test(
   //   '',
   //   () {

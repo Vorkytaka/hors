@@ -435,9 +435,9 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
         builder.date!.month,
         cover.date!.day,
       );
-      builder.fix(FixPeriod.week);
-      builder.fix(FixPeriod.day);
     }
+    builder.fix(FixPeriod.week);
+    builder.fix(FixPeriod.day);
   }
 
   bool timeGot = false;
