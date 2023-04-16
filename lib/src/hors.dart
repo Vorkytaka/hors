@@ -7,7 +7,9 @@ import 'package:meta/meta.dart';
 import 'recognizer/recognizer.dart';
 import 'token/token_parser.dart';
 
+@experimental
 class Hors {
+  @experimental
   const Hors({
     required this.recognizers,
     required this.tokenParsers,
@@ -19,7 +21,8 @@ class Hors {
   static final Pattern _extraSymbols = RegExp('[^0-9а-яё-]');
   static final Pattern _allowSymbols = RegExp('[а-яА-ЯёЁa-zA-Z0-9-]+');
 
-  void x(String text, DateTime fromDatetime, [int closestSteps = 4]) {
+  @experimental
+  HorsResult parse(String text, DateTime fromDatetime, [int closestSteps = 4]) {
     ParsingData data = ParsingData(
       sourceText: text,
       tokens: _allowSymbols
@@ -60,9 +63,12 @@ class Hors {
       );
     }
 
-    getFinalTokens(fromDatetime, data);
+    final tokens = getFinalTokens(fromDatetime, data);
 
-    print(data);
+    return HorsResult(
+      source: text,
+      tokens: tokens,
+    );
   }
 
   static Token _matchToTextToken(Match match) {
@@ -96,6 +102,33 @@ class Hors {
 
     return null;
   }
+}
+
+@immutable
+class HorsResult {
+  final String source;
+  final List<DateTimeToken> tokens;
+
+  const HorsResult({
+    required this.source,
+    required this.tokens,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HorsResult &&
+          runtimeType == other.runtimeType &&
+          source == other.source &&
+          tokens == other.tokens;
+
+  @override
+  int get hashCode => Object.hash(source, tokens);
+
+  @override
+  String toString() => 'HorsResult{source: $source, tokens: $tokens}';
+
+// todo: string without tokens
 }
 
 enum FixPeriod {
@@ -463,16 +496,16 @@ DateTime takeDayOfWeekFrom(
 
 // todo: нужны примеры для теста
 List<DateToken> takeFromAdjacent(DateToken firstToken, DateToken secondToken) {
-  final firstDateCopy = AbstractDateBuilder.fromDate(firstToken.date)
-    ..fixes &= secondToken.date.fixes;
+  final firstDateCopy = AbstractDateBuilder.fromDate(firstToken.date);
+  firstDateCopy.fixes &= ~secondToken.date.fixes;
   final firstCopy = DateToken(
     start: firstToken.start,
     end: firstToken.end,
     date: firstDateCopy.build(),
   );
 
-  final secondDateCopy = AbstractDateBuilder.fromDate(secondToken.date)
-    ..fixes &= firstToken.date.fixes;
+  final secondDateCopy = AbstractDateBuilder.fromDate(secondToken.date);
+  secondDateCopy.fixes &= ~firstToken.date.fixes;
   final secondCopy = DateToken(
     start: secondToken.start,
     end: secondToken.end,
@@ -554,7 +587,7 @@ List<Token>? collapseClosest(
     ..[secondDateIndex] = newSecond;
 }
 
-void getFinalTokens(
+List<DateTimeToken> getFinalTokens(
   DateTime fromDatetime,
   ParsingData data,
 ) {
@@ -568,7 +601,7 @@ void getFinalTokens(
           ))
       .toList(growable: false);
 
-  print(tokens);
+  return tokens;
 }
 
 DateTimeToken parseFinalToken(
@@ -672,6 +705,9 @@ class DateTimeToken {
     required this.type,
     this.duplicateGroup,
   });
+
+  @override
+  String toString() => 'DateTimeToken($date)';
 }
 
 class DateTimeTokenBuilder {

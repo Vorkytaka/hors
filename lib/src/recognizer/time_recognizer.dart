@@ -1,7 +1,5 @@
 import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
 import 'package:hors/src/token/token_parser.dart';
-import 'package:hors/src/token/token_parsers.dart';
 
 import '../data.dart';
 
