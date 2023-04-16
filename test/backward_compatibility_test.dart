@@ -254,6 +254,35 @@ void main() {
     },
   );
 
+  test(
+    'Weekday',
+    () {
+      var result = hors.parse(
+        'В следующем месяце во вторник состоится событие',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      expect(result.tokens.length, 1);
+      var date = result.tokens.first;
+      expect(date.date.year, 2019);
+      expect(date.date.month, 11);
+      expect(date.date.day, 5);
+
+      result = hors.parse(
+        'Через месяц во вторник состоится событие',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      expect(result.tokens.length, 1);
+      date = result.tokens.first;
+      expect(date.date.year, 2019);
+      expect(date.date.month, 11);
+      expect(date.date.day, 12);
+    },
+  );
+
   // test(
   //   '',
   //   () {
