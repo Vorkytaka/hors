@@ -283,6 +283,49 @@ void main() {
     },
   );
 
+  test(
+    'Punctuation And Indexes',
+    () {
+      var result = hors.parse(
+        'Через месяц, неделю и 2 дня состоится событие!',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      expect(result.tokens.length, 1);
+      expect(result.textWithoutDates, 'состоится событие!');
+
+      result = hors.parse(
+        '=== 26!%;марта   в 18:00 , , , будет *** экзамен!!',
+        DateTime(2019, 10, 13),
+        3,
+      );
+
+      // todo:
+      // expect(result.tokens.length, 1);
+      // expect(result.textWithoutDates, '=== , , , будет *** экзамен!!');
+    },
+  );
+
+  test(
+    'Collapse Distance Date',
+    () {
+      final result = hors.parse(
+        'на следующей неделе будет событие в пятницу и будет оно в 12',
+        DateTime(2019, 10, 8),
+        3,
+      );
+
+      // todo
+      // expect(result.tokens.length, 1);
+      // todo: text
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.date.day, 18);
+      expect(date.date.hour, 12);
+    },
+  );
+
   // test(
   //   '',
   //   () {

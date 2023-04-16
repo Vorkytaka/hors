@@ -116,6 +116,7 @@ class Hors {
   }
 }
 
+@experimental
 @immutable
 class HorsResult {
   final String source;
@@ -125,6 +126,15 @@ class HorsResult {
     required this.source,
     required this.tokens,
   });
+
+  // todo: better algo + results
+  String get textWithoutDates {
+    String str = source;
+    for (final token in tokens.reversed) {
+      str = str.replaceRange(token.start, token.end, '');
+    }
+    return str.trim();
+  }
 
   @override
   bool operator ==(Object other) =>
