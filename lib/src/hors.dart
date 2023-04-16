@@ -495,7 +495,11 @@ DateTime takeDayOfWeekFrom(
 }
 
 // todo: нужны примеры для теста
-List<DateToken> takeFromAdjacent(DateToken firstToken, DateToken secondToken) {
+List<DateToken> takeFromAdjacent(
+  DateToken firstToken,
+  DateToken secondToken,
+  bool isLinked,
+) {
   final firstDateCopy = AbstractDateBuilder.fromDate(firstToken.date);
   firstDateCopy.fixes &= ~secondToken.date.fixes;
   final firstCopy = DateToken(
@@ -514,18 +518,18 @@ List<DateToken> takeFromAdjacent(DateToken firstToken, DateToken secondToken) {
 
   final newTokens = <DateToken>[];
   if (firstToken.date.minFixed.index > secondCopy.date.minFixed.index) {
-    final token = collapse(firstToken, secondCopy, false);
+    final token = collapse(firstToken, secondCopy, isLinked);
     newTokens.add(token ?? firstToken);
   } else {
-    final token = collapse(secondCopy, firstToken, false);
+    final token = collapse(secondCopy, firstToken, isLinked);
     newTokens.add(token ?? firstToken);
   }
 
   if (secondToken.date.minFixed.index > firstCopy.date.minFixed.index) {
-    final token = collapse(secondToken, firstCopy, false);
+    final token = collapse(secondToken, firstCopy, isLinked);
     newTokens.add(token ?? secondToken);
   } else {
-    final token = collapse(firstCopy, secondToken, false);
+    final token = collapse(firstCopy, secondToken, isLinked);
     newTokens.add(token ?? secondToken);
   }
 
@@ -622,7 +626,7 @@ DateTimeToken parseFinalToken(
     DateToken firstDate = tokens[firstDateIndex] as DateToken;
     DateToken secondDate = tokens[secondDateIndex] as DateToken;
 
-    final dates = takeFromAdjacent(firstDate, secondDate);
+    final dates = takeFromAdjacent(firstDate, secondDate, true);
     firstDate = dates[0];
     secondDate = dates[1];
 

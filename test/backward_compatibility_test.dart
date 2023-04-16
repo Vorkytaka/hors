@@ -64,4 +64,23 @@ void main() {
       expect(date.dateTo?.hour, 13);
     },
   );
+
+  test(
+    'Time Period Uncertain',
+    () {
+      final result = hors.parse(
+        'с 2 до 5 событие',
+        DateTime(2019, 10, 13),
+        1,
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.hour, 14);
+      expect(date.dateTo?.hour, 17);
+    },
+  );
+
+  test('', () => null);
 }
