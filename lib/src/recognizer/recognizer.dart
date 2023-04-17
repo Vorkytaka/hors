@@ -3,7 +3,6 @@ import 'package:hors/src/recognizer/relative_date_recognizer.dart';
 import 'package:hors/src/recognizer/time_recognizer.dart';
 
 import '../data.dart';
-import '../utils.dart';
 import 'dates_period_recognizer.dart';
 import 'day_of_month_recognizer.dart';
 import 'day_of_week_recognizer.dart';
@@ -35,7 +34,7 @@ abstract class Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   );
 
   ParsingData recognize(ParsingData data, DateTime fromDatetime) => parsing(
@@ -48,11 +47,11 @@ abstract class Recognizer {
 ParsingData parsing(
   ParsingData data,
   RegExp regexp,
-  List<Token>? Function(Match match, List<Token> tokens) parser,
+  List<Token>? Function(Match match, ParsingData data) parser,
 ) {
   final newTokens = matchAll(
     regexp,
-    data.tokens,
+    data,
     parser,
   );
 
@@ -69,10 +68,11 @@ ParsingData parsing(
 // todo: reverse?
 List<Token>? matchAll(
   RegExp regexp,
-  List<Token> tokens,
-  List<Token>? Function(Match match, List<Token> tokens) parser,
+  ParsingData data,
+  List<Token>? Function(Match match, ParsingData data) parser,
 ) {
-  final pattern = tokens.toPattern;
+  final tokens = data.tokens;
+  final pattern = data.pattern;
   final matches = regexp.allMatches(pattern).iterator;
 
   if (!matches.moveNext()) {
@@ -85,12 +85,11 @@ List<Token>? matchAll(
     Match match = matches.current;
     newTokens.addAll(tokens.sublist(lastStart, match.start));
 
-    final subtokens = tokens.sublist(match.start, match.end);
-    final parsed = parser(match, subtokens);
+    final parsed = parser(match, data);
     if (parsed != null) {
       newTokens.addAll(parsed);
     } else {
-      newTokens.addAll(subtokens);
+      newTokens.addAll(tokens.sublist(match.start, match.end));
     }
     lastStart = match.end;
   } while (lastStart < pattern.length && matches.moveNext());

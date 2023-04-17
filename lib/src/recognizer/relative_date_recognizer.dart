@@ -1,5 +1,3 @@
-import 'package:hors/src/recognizer/recognizer.dart';
-
 import '../../hors.dart';
 import '../data.dart';
 
@@ -14,8 +12,10 @@ class RelativeDateRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final int direction;
     switch (match.group(1)) {
       case 'y':
@@ -54,8 +54,8 @@ class RelativeDateRecognizer extends Recognizer {
 
     return [
       DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
+        start: tokens[match.start].start,
+        end: tokens[match.end - 1].end,
         date: builder.build(),
       )
     ];

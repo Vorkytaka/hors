@@ -1,8 +1,6 @@
 import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
 
 import '../data.dart';
-import '../token/token_parsers.dart';
 
 class MonthRecognizer extends Recognizer {
   const MonthRecognizer();
@@ -15,12 +13,18 @@ class MonthRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     int year = fromDatetime.year;
     bool yearFixed = false;
 
-    final monthToken = tokens.firstWhere((token) => token.symbol == 'M');
+    final monthTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'M',
+      match.start,
+    );
+    final monthToken = tokens[monthTokenIndex];
     int month = fromDatetime.month;
     for (final parser in TokenParsers.months) {
       final symbol = parser.parse(monthToken.text);
@@ -56,8 +60,8 @@ class MonthRecognizer extends Recognizer {
 
     return [
       DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
+        start: tokens[match.start].start,
+        end: tokens[match.end - 1].end,
         date: dateBuilder.build(),
       )
     ];

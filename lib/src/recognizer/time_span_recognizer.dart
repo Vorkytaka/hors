@@ -1,7 +1,6 @@
 import 'package:hors/hors.dart';
 
 import '../data.dart';
-import 'recognizer.dart';
 
 class TimeSpanRecognizer extends Recognizer {
   const TimeSpanRecognizer();
@@ -14,8 +13,10 @@ class TimeSpanRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final prefix = match.group(1);
     final postfix = match.group(4);
     if (!((prefix != null) ^ (postfix != null))) {
@@ -38,7 +39,7 @@ class TimeSpanRecognizer extends Recognizer {
     for (int i = 0; i < letters.length; i++) {
       // If we have (через) token
       final tokenIndex = prefix != null ? i + 1 : i;
-      final token = tokens[tokenIndex];
+      final token = tokens[tokenIndex + match.start];
       switch (token.symbol) {
         case '0':
           lastNumber = int.tryParse(token.text) ?? 1;
@@ -85,8 +86,8 @@ class TimeSpanRecognizer extends Recognizer {
 
     return [
       DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
+        start: tokens[match.start].start,
+        end: tokens[match.end - 1].end,
         date: builder.build(),
       )
     ];

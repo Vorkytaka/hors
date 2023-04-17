@@ -1,8 +1,6 @@
 import 'package:hors/hors.dart';
 import 'package:hors/src/data.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
 import 'package:hors/src/token/token_parser.dart';
-import 'package:hors/src/token/token_parsers.dart';
 
 class DayOfWeekRecognizer extends Recognizer {
   const DayOfWeekRecognizer();
@@ -15,15 +13,20 @@ class DayOfWeekRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final dayOfWeekToken = tokens.firstWhere((token) => token.symbol == 'D');
-    final dayOfWeek = TokenParsers.daysOfWeek.parseOrder(dayOfWeekToken.text);
+    final tokens = data.tokens;
+    final weekdayTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'D',
+      match.start,
+    );
+    final weekdayToken = tokens[weekdayTokenIndex];
+    final weekday = TokenParsers.daysOfWeek.parseOrder(weekdayToken.text);
 
-    if (dayOfWeek == null) return null;
+    if (weekday == null) return null;
 
     final currentDayOfWeek = fromDatetime.weekday;
-    int diff = dayOfWeek - currentDayOfWeek;
+    int diff = weekday - currentDayOfWeek;
 
     final dateBuilder = AbstractDate.builder();
 
@@ -51,8 +54,8 @@ class DayOfWeekRecognizer extends Recognizer {
     return [
       DateToken(
         date: dateBuilder.build(),
-        start: tokens.first.start,
-        end: tokens.last.end,
+        start: tokens[match.start].start,
+        end: tokens[match.end - 1].end,
       ),
     ];
   }

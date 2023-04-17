@@ -1,9 +1,7 @@
 import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
 import 'package:hors/src/utils.dart';
 
 import '../data.dart';
-import '../token/token_parsers.dart';
 
 class DayOfMonthRecognizer extends Recognizer {
   const DayOfMonthRecognizer();
@@ -16,12 +14,17 @@ class DayOfMonthRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     bool monthFixed = false;
 
-    final monthToken = tokens
-        .firstWhere((token) => token.symbol == 'M' || token.symbol == '#');
+    final monthTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'M' || token.symbol == '#',
+      match.start,
+    );
+    final monthToken = tokens[monthTokenIndex];
     int month = fromDatetime.month;
     for (final parser in TokenParsers.months) {
       final symbol = parser.parse(monthToken.text);
@@ -35,7 +38,7 @@ class DayOfMonthRecognizer extends Recognizer {
     final daysLength = match.group(1)?.length ?? 0;
     final List<DateToken> dates = [];
     for (int i = 0; i < daysLength; i++) {
-      final token = tokens[i];
+      final token = tokens[i + match.start];
       if (token.symbol != '0') {
         // that's not a number
         continue;

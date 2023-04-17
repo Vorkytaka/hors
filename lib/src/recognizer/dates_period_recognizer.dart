@@ -14,12 +14,17 @@ class DatesPeriodRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     bool monthFixed = false;
 
-    final monthToken = tokens
-        .firstWhere((token) => token.symbol == 'M' || token.symbol == '#');
+    final monthTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'M' || token.symbol == '#',
+      match.start,
+    );
+    final monthToken = tokens[monthTokenIndex];
     int month = fromDatetime.month;
     for (final parser in TokenParsers.months) {
       final symbol = parser.parse(monthToken.text);
@@ -30,7 +35,10 @@ class DatesPeriodRecognizer extends Recognizer {
       }
     }
 
-    int? dayIndex = tokens.indexWhere((token) => token.symbol == '0');
+    int? dayIndex = tokens.indexWhere(
+      (token) => token.symbol == '0',
+      match.start,
+    );
     final dayToken = tokens[dayIndex];
     int? day = int.tryParse(dayToken.text);
     if (day == null) return null;

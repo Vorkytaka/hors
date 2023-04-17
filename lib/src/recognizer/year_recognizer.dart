@@ -1,6 +1,5 @@
 import '../../hors.dart';
 import '../data.dart';
-import 'recognizer.dart';
 
 class YearRecognizer extends Recognizer {
   const YearRecognizer();
@@ -12,9 +11,11 @@ class YearRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final yearStr = tokens.first.text;
+    final tokens = data.tokens;
+
+    final yearStr = tokens[match.start].text;
     int? year = int.tryParse(yearStr);
 
     if (year == null) return null;
@@ -30,8 +31,8 @@ class YearRecognizer extends Recognizer {
 
     return [
       DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
+        start: tokens[match.start].start,
+        end: tokens[match.end - 1].end,
         date: builder.build(),
       )
     ];

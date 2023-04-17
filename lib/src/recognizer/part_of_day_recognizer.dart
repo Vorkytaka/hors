@@ -1,9 +1,7 @@
 import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
 import 'package:hors/src/token/token_parser.dart';
 
 import '../data.dart';
-import '../token/token_parsers.dart';
 
 class PartOfDayRecognizer extends Recognizer {
   const PartOfDayRecognizer();
@@ -16,8 +14,10 @@ class PartOfDayRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final preDate = match.group(1);
     final postDate = match.group(3);
 
@@ -61,37 +61,37 @@ class PartOfDayRecognizer extends Recognizer {
 
     final int start;
     if (preDate != null) {
-      start = tokens[1].start;
+      start = tokens[match.start + 1].start;
     } else {
-      start = tokens.first.start;
+      start = tokens[match.start].start;
     }
 
     final int end;
     if (postDate != null) {
-      end = tokens[tokens.length - 2].end;
+      end = tokens[match.end - 2].end;
     } else {
-      end = tokens.last.end;
+      end = tokens[match.end - 1].end;
     }
 
     if (hourStart == hourEnd) {
       return [
-        if (preDate != null) tokens.first,
+        if (preDate != null) tokens[match.start],
         DateToken(
           start: start,
           end: end,
           date: builder.build(),
         ),
-        if (postDate != null) tokens.last,
+        if (postDate != null) tokens[match.end - 1],
       ];
     } else {
       final spanBuilder = AbstractDate.builder(time: Duration(hours: hourEnd));
       spanBuilder.fix(FixPeriod.timeUncertain);
       return [
-        if (preDate != null) tokens.first,
+        if (preDate != null) tokens[match.start],
         DateToken(start: start, end: end, date: builder.build()),
         TokenParsers.timeTo.toMaybeDateToken(start, end),
         DateToken(start: start, end: end, date: spanBuilder.build()),
-        if (postDate != null) tokens.last,
+        if (postDate != null) tokens[match.end - 1],
       ];
     }
   }

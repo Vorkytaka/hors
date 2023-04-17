@@ -14,8 +14,10 @@ class TimeRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final prePartOfDay = match.group(1);
     final number = match.group(5);
     final postPartOfDay = match.group(9);
@@ -37,7 +39,10 @@ class TimeRecognizer extends Recognizer {
       }
     }
 
-    final hoursTokenIndex = tokens.indexWhere((token) => token.symbol == '0');
+    final hoursTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == '0',
+      match.start,
+    );
     int hours;
     if (hoursTokenIndex >= 0) {
       final hoursToken = tokens[hoursTokenIndex];
@@ -101,8 +106,8 @@ class TimeRecognizer extends Recognizer {
 
     builder.time = Duration(hours: hours, minutes: minutes);
 
-    final start = tokens.first.start;
-    final end = tokens.last.end;
+    final start = tokens[match.start].start;
+    final end = tokens[match.end - 1].end;
     return [
       if (match.group(2) == 't')
         TokenParsers.timeTo.toMaybeDateToken(start, end),

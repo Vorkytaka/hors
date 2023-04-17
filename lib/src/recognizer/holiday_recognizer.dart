@@ -13,9 +13,10 @@ class HolidayRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final token = tokens.first;
+    final tokens = data.tokens;
+    final token = tokens[match.start];
 
     final symbol = TokenParsers.holiday.parse(
       token.text,

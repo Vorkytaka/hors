@@ -12,9 +12,10 @@ class RelativeDayRecognizer extends Recognizer {
   List<Token>? parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final token = tokens.first;
+    final tokens = data.tokens;
+    final token = tokens[match.start];
     int? relativeDay = int.tryParse(token.symbol);
     if (relativeDay == null) return null;
     relativeDay -= 4;

@@ -42,25 +42,25 @@ class Hors {
     data = parsing(
       data,
       startPeriodsPattern,
-      (match, tokens) => collapseDates(fromDatetime, match, tokens),
+      (match, data) => collapseDates(fromDatetime, match, data),
     );
 
     data = parsing(
       data,
       endPeriodsPattern,
-      (match, tokens) => collapseDates(fromDatetime, match, tokens),
+      (match, data) => collapseDates(fromDatetime, match, data),
     );
 
     data = parsing(
       data,
       endPeriodsPattern,
-      (match, tokens) => takeFromA(fromDatetime, match, tokens),
+      (match, data) => takeFromA(fromDatetime, match, data),
     );
 
     data = parsing(
       data,
       startPeriodsPattern,
-      (match, tokens) => takeFromA(fromDatetime, match, tokens),
+      (match, data) => takeFromA(fromDatetime, match, data),
     );
 
     if (closestSteps > 1) {
@@ -69,8 +69,8 @@ class Hors {
       data = parsing(
         data,
         regexp,
-        (match, tokens) {
-          return collapseClosest(match, tokens, lastGroup++);
+        (match, data) {
+          return collapseClosest(match, data, lastGroup++);
         },
       );
     }
@@ -343,9 +343,14 @@ class ParseResult {
 List<Token>? collapseDates(
   DateTime fromDatetime,
   Match match,
-  List<Token> tokens,
+  ParsingData data,
 ) {
-  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+  final tokens = data.tokens;
+
+  final firstDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    match.start,
+  );
   final secondDateIndex = tokens.indexWhere(
     (token) => token.symbol == '@',
     firstDateIndex + 1,
@@ -520,9 +525,14 @@ DateTime takeDayOfWeekFrom(
 List<Token> takeFromA(
   DateTime fromDatetime,
   Match match,
-  List<Token> tokens,
+  ParsingData data,
 ) {
-  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+  final tokens = data.tokens;
+
+  final firstDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    match.start,
+  );
   final secondDateIndex = tokens.indexWhere(
     (token) => token.symbol == '@',
     firstDateIndex + 1,
@@ -535,9 +545,10 @@ List<Token> takeFromA(
   final newFirstToken = newTokens[0];
   final newSecondToken = newTokens[1];
 
-  return tokens
-    ..[firstDateIndex] = newFirstToken
-    ..[secondDateIndex] = newSecondToken;
+  // todo
+  return tokens.sublist(match.start, match.end)
+    ..[firstDateIndex - match.start] = newFirstToken
+    ..[secondDateIndex - match.start] = newSecondToken;
 }
 
 // todo: нужны примеры для теста
@@ -584,10 +595,15 @@ List<DateToken> takeFromAdjacent(
 
 List<Token>? collapseClosest(
   Match match,
-  List<Token> tokens,
+  ParsingData data,
   int group,
 ) {
-  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+  final tokens = data.tokens;
+
+  final firstDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    match.start,
+  );
   final secondDateIndex = tokens.indexWhere(
     (token) => token.symbol == '@',
     firstDateIndex + 1,
@@ -632,9 +648,10 @@ List<Token>? collapseClosest(
     date: newSecond.date.withDuplicateGroup(duplicateGroup),
   );
 
-  return tokens
-    ..[firstDateIndex] = newFirst
-    ..[secondDateIndex] = newSecond;
+  // todo
+  return tokens.sublist(match.start, match.end)
+    ..[firstDateIndex - match.start] = newFirst
+    ..[secondDateIndex - match.start] = newSecond;
 }
 
 List<DateTimeToken> getFinalTokens(
