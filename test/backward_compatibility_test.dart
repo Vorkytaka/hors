@@ -326,6 +326,56 @@ void main() {
     },
   );
 
+  test(
+    'Collapse Distance Time',
+    () {
+      var result = hors.parse(
+        'в четверг будет событие в 16 0 0',
+        DateTime(2019, 10, 8),
+        3,
+      );
+
+      // todo
+      // expect(result.tokens.length, 1);
+      // todo: text
+      var date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 16);
+      expect(date.date.day, 10);
+
+      result = hors.parse(
+        'завтра встреча с другом в 12',
+        DateTime(2019, 10, 11),
+        5,
+      );
+
+      // todo
+      // expect(result.tokens.length, 1);
+      date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 12);
+      expect(date.date.day, 12);
+
+      result = hors.parse(
+        'в четверг будет хорошее событие в 16 0 0',
+        DateTime(2019, 10, 8),
+        2,
+      );
+
+      // todo
+      // expect(result.tokens.length, 2);
+      final dateFirst = result.tokens[0];
+      final dateLast = result.tokens[1];
+      expect(dateFirst.type, DateTimeTokenType.fixed);
+      expect(dateFirst.hasTime, false);
+      expect(dateLast.hasTime, true);
+      expect(dateLast.date.hour, 16);
+      expect(dateFirst.date.day, 10);
+    },
+  );
+
   // test(
   //   '',
   //   () {
