@@ -440,6 +440,24 @@ void main() {
     },
   );
 
+  test(
+    'Time Before Day',
+    () {
+      final result = hors.parse(
+        '12 часов 12 сентября будет встреча',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 12);
+      expect(date.date.day, 12);
+      expect(date.date.month, 9);
+    },
+  );
+
   // test(
   //   '',
   //   () {
