@@ -44,6 +44,30 @@ abstract class Recognizer {
       );
 }
 
+void parsing2(
+  ParsingData data,
+  RegExp regexp,
+  void Function(Match match, ParsingData data) parser,
+  bool reverse,
+) {
+  final pattern = data.pattern;
+  Iterable<RegExpMatch> matches = regexp.allMatches(pattern);
+
+  if (matches.isEmpty) {
+    return;
+  }
+
+  if (reverse) {
+    matches = matches.toList(growable: false).reversed;
+  }
+
+  for (final match in matches) {
+    parser(match, data);
+  }
+}
+
+// ignore: provide_deprecation_message
+@deprecated
 ParsingData parsing(
   ParsingData data,
   RegExp regexp,

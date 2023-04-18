@@ -51,27 +51,28 @@ class Hors {
       (match, data) => collapseDates(fromDatetime, match, data),
     );
 
-    data = parsing(
+    parsing2(
       data,
-      endPeriodsPattern,
-      (match, data) => takeFromA(fromDatetime, match, data),
+      RegExp(r'(?<=(t))(@)(?=((N?[fot]?)(@)))'),
+      takeFromA,
+      true,
     );
 
-    data = parsing(
+    parsing2(
       data,
-      startPeriodsPattern,
-      (match, data) => takeFromA(fromDatetime, match, data),
+      RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))'),
+      takeFromA,
+      true,
     );
 
     if (closestSteps > 1) {
-      final regexp = RegExp('(@)[^@t]{1,$closestSteps}(@)');
+      final regexp = RegExp('(@)[^@t]{1,$closestSteps}(?=(@))');
       int lastGroup = 0;
-      data = parsing(
+      parsing2(
         data,
         regexp,
-        (match, data) {
-          return collapseClosest(match, data, lastGroup++);
-        },
+        (match, data) => collapseClosest(match, data, lastGroup++),
+        true,
       );
     }
 
@@ -522,8 +523,7 @@ DateTime takeDayOfWeekFrom(
 }
 
 // todo
-List<Token> takeFromA(
-  DateTime fromDatetime,
+void takeFromA(
   Match match,
   ParsingData data,
 ) {
@@ -545,10 +545,9 @@ List<Token> takeFromA(
   final newFirstToken = newTokens[0];
   final newSecondToken = newTokens[1];
 
-  // todo
-  return tokens.sublist(match.start, match.end)
-    ..[firstDateIndex - match.start] = newFirstToken
-    ..[secondDateIndex - match.start] = newSecondToken;
+  tokens
+    ..[firstDateIndex] = newFirstToken
+    ..[secondDateIndex] = newSecondToken;
 }
 
 // todo: нужны примеры для теста
@@ -593,7 +592,7 @@ List<DateToken> takeFromAdjacent(
   return newTokens.toList(growable: false);
 }
 
-List<Token>? collapseClosest(
+void collapseClosest(
   Match match,
   ParsingData data,
   int group,
@@ -613,7 +612,7 @@ List<Token>? collapseClosest(
   final secondDate = tokens[secondDateIndex] as DateToken;
 
   if (!canCollapse(firstDate.date, secondDate.date)) {
-    return null;
+    return;
   }
 
   DateToken newFirst;
@@ -649,9 +648,9 @@ List<Token>? collapseClosest(
   );
 
   // todo
-  return tokens.sublist(match.start, match.end)
-    ..[firstDateIndex - match.start] = newFirst
-    ..[secondDateIndex - match.start] = newSecond;
+  tokens
+    ..[firstDateIndex] = newFirst
+    ..[secondDateIndex] = newSecond;
 }
 
 List<DateTimeToken> getFinalTokens(
@@ -676,6 +675,7 @@ DateTimeToken parseFinalToken(
   Match match,
   List<Token> tokens,
 ) {
+  // todo
   final DateTimeToken token;
   if (match.group(3) != null && match.group(4) != null) {
     // if we match a period
