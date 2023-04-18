@@ -394,6 +394,29 @@ void main() {
     },
   );
 
+  test(
+    'Time Period',
+    () {
+      final result = hors.parse(
+        'В следующий четверг с 9 утра до 6 вечера важный экзамен!',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 9);
+      expect(date.date.day, 12);
+      expect(date.date.month, 9);
+      expect(date.dateTo?.hour, 18);
+      expect(date.dateTo?.day, 12);
+      expect(date.dateTo?.month, 9);
+      expect(date.date.year, 2019);
+      expect(date.dateTo?.year, 2019);
+    },
+  );
+
   // test(
   //   '',
   //   () {
