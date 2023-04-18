@@ -474,6 +474,22 @@ void main() {
     },
   );
 
+  test(
+    'Fix Period',
+    () {
+      final result = hors.parse(
+        "на выходных будет хорошо",
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.day, 14);
+      expect(date.dateTo?.day, 15);
+    },
+  );
+
   // test(
   //   '',
   //   () {
