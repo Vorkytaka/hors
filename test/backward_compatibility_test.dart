@@ -546,6 +546,23 @@ void main() {
     },
   );
 
+  test(
+    'Holidays',
+    () {
+      final result = hors.parse(
+        'в эти выходные еду на дачу',
+        DateTime(2019, 9, 2),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.day, 7);
+      expect(date.dateTo?.day, 8);
+    },
+  );
+
   // test(
   //   '',
   //   () {
