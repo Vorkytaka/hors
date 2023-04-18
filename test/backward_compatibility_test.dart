@@ -563,16 +563,20 @@ void main() {
     },
   );
 
-  // test(
-  //   '',
-  //   () {
-  //     final result = hors.parse(
-  //       text,
-  //       fromDatetime,
-  //     );
-  //
-  //     expect(result.tokens.length, 1);
-  //     final date = result.tokens.first;
-  //   },
-  // );
+  test(
+    'Holiday',
+    () {
+      final result = hors.parse(
+        'пойду гулять в следующий выходной',
+        DateTime(2019, 9, 2),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.date.day, 14);
+      expect(date.dateTo?.day, 14);
+    },
+  );
 }
