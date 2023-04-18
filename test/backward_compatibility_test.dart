@@ -490,6 +490,46 @@ void main() {
     },
   );
 
+  test(
+    'Dates Period',
+    () {
+      final strings = [
+        "с 11 по 15 сентября будет командировка",
+        "11 по 15 сентября будет командировка",
+        "с 11 до 15 сентября будет командировка",
+      ];
+
+      for (final string in strings) {
+        final result = hors.parse(
+          string,
+          DateTime(2019, 8, 6),
+        );
+
+        expect(result.tokens.length, 1);
+        final date = result.tokens.first;
+
+        expect(date.type, DateTimeTokenType.period);
+        expect(date.date.day, 11);
+        expect(date.dateTo?.day, 15);
+        expect(date.date.month, 9);
+        expect(date.dateTo?.month, 9);
+      }
+
+      final result = hors.parse(
+        'с 11 до 15 числа будет командировка',
+        DateTime(2019, 9, 6),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.day, 11);
+      expect(date.dateTo?.day, 15);
+      expect(date.date.month, 9);
+      expect(date.dateTo?.month, 9);
+    },
+  );
+
   // test(
   //   '',
   //   () {
