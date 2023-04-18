@@ -417,6 +417,29 @@ void main() {
     },
   );
 
+  test(
+    'Complex Period',
+    () {
+      final result = hors.parse(
+        "хакатон с 12 часов 18 сентября до 12 часов 20 сентября",
+        DateTime(2019, 7, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 12);
+      expect(date.date.day, 18);
+      expect(date.date.month, 9);
+      expect(date.dateTo?.hour, 12);
+      expect(date.dateTo?.day, 20);
+      expect(date.dateTo?.month, 9);
+      expect(date.date.year, 2019);
+      expect(date.dateTo?.year, 2019);
+    },
+  );
+
   // test(
   //   '',
   //   () {
