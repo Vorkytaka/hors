@@ -530,6 +530,22 @@ void main() {
     },
   );
 
+  test(
+    'Days Of Week',
+    () {
+      final result = hors.parse(
+        'во вторник встреча с заказчиком',
+        DateTime(2019, 9, 6),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.date.day, 10);
+    },
+  );
+
   // test(
   //   '',
   //   () {
