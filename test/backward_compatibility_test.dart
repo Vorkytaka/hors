@@ -458,6 +458,22 @@ void main() {
     },
   );
 
+  test(
+    'Time Hour Of Day',
+    () {
+      final result = hors.parse(
+        '24 сентября в час дня',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 13);
+    },
+  );
+
   // test(
   //   '',
   //   () {
