@@ -376,6 +376,24 @@ void main() {
     },
   );
 
+  test(
+    'Time After Day',
+    () {
+      final result = hors.parse(
+        'в четверг 16 0 0 будет событие',
+        DateTime(2019, 10, 8),
+      );
+
+      // todo
+      // expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 16);
+      expect(date.date.day, 10);
+    },
+  );
+
   // test(
   //   '',
   //   () {
