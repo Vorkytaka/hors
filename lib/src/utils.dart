@@ -3,38 +3,9 @@ import 'dart:math';
 import 'data.dart';
 
 extension TokenListUtils on List<Token> {
+  // ignore: provide_deprecation_message
+  @deprecated
   String get toPattern => map((e) => e.symbol).join();
-}
-
-extension RegExpUtils on RegExp {
-  List<Token>? matchThrough(
-    List<Token> tokens,
-    List<Token>? Function(Match match, List<Token> tokens) onFound,
-  ) {
-    tokens = [...tokens];
-    final pattern = tokens.toPattern;
-    RegExpMatch? match = firstMatch(pattern);
-
-    if (match == null) return null;
-
-    int lastStart = 0;
-    do {
-      final foundMatch = match!;
-
-      // do it!
-      final newTokens =
-          onFound(foundMatch, tokens.sublist(foundMatch.start, foundMatch.end));
-
-      if (newTokens != null && newTokens.isNotEmpty) {
-        tokens.replaceRange(foundMatch.start, foundMatch.end, newTokens);
-      }
-
-      lastStart = foundMatch.end;
-      match = firstMatch(pattern.substring(lastStart));
-    } while (lastStart < pattern.length && match != null);
-
-    return tokens;
-  }
 }
 
 int getValidDayForMonth(int year, int month, int day) {

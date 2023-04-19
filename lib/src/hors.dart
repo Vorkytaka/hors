@@ -343,7 +343,7 @@ class ParseResult {
   }
 }
 
-void collapseDates2(
+bool collapseDates2(
   Match match,
   ParsingData data,
 ) {
@@ -362,7 +362,7 @@ void collapseDates2(
   final secondDate = tokens[secondDateIndex] as DateToken;
 
   if (!canCollapse(firstDate.date, secondDate.date)) {
-    return;
+    return false;
   }
 
   final DateToken? newToken;
@@ -372,13 +372,15 @@ void collapseDates2(
     newToken = collapse(firstDate, secondDate, false);
   }
 
-  if (newToken == null) return;
+  if (newToken == null) return false;
 
   tokens.replaceRange(
     firstDateIndex,
     secondDateIndex + 1,
     [newToken],
   );
+
+  return true;
 }
 
 List<Token>? collapseDates(
@@ -563,7 +565,7 @@ DateTime takeDayOfWeekFrom(
 }
 
 // todo
-void takeFromA(
+bool takeFromA(
   Match match,
   ParsingData data,
 ) {
@@ -588,6 +590,8 @@ void takeFromA(
   tokens
     ..[firstDateIndex] = newFirstToken
     ..[secondDateIndex] = newSecondToken;
+
+  return true;
 }
 
 // todo: нужны примеры для теста
@@ -632,7 +636,7 @@ List<DateToken> takeFromAdjacent(
   return newTokens.toList(growable: false);
 }
 
-void collapseClosest(
+bool collapseClosest(
   Match match,
   ParsingData data,
   int group,
@@ -652,7 +656,7 @@ void collapseClosest(
   final secondDate = tokens[secondDateIndex] as DateToken;
 
   if (!canCollapse(firstDate.date, secondDate.date)) {
-    return;
+    return false;
   }
 
   DateToken newFirst;
@@ -691,6 +695,8 @@ void collapseClosest(
   tokens
     ..[firstDateIndex] = newFirst
     ..[secondDateIndex] = newSecond;
+
+  return true;
 }
 
 List<DateTimeToken> getFinalTokens(
@@ -699,7 +705,7 @@ List<DateTimeToken> getFinalTokens(
 ) {
   final regexp = RegExp(r'(([fo]?(@)t(@))|([fo]?(@)))');
   final tokens = regexp
-      .allMatches(data.tokens.toPattern)
+      .allMatches(data.pattern)
       .map((match) => parseFinalToken(
             fromDatetime,
             match,

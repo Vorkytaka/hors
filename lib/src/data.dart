@@ -3,11 +3,16 @@ import 'package:hors/src/hors.dart';
 class ParsingData {
   final String sourceText;
   final List<Token> tokens;
+  String _pattern;
 
   ParsingData({
     required this.sourceText,
     required this.tokens,
-  });
+  }) : _pattern = tokens.map((t) => t.symbol).join();
+
+  String get pattern => _pattern;
+
+  void updatePattern() => _pattern = tokens.map((t) => t.symbol).join();
 }
 
 /// For now, tokens have their own lifecycle.

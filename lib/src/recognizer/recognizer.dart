@@ -48,10 +48,10 @@ abstract class Recognizer {
 void parsing2(
   ParsingData data,
   RegExp regexp,
-  void Function(Match match, ParsingData data) parser,
+  bool Function(Match match, ParsingData data) parser,
   bool reverse,
 ) {
-  final pattern = data.tokens.toPattern;
+  final pattern = data.pattern;
   Iterable<RegExpMatch> matches = regexp.allMatches(pattern);
 
   if (matches.isEmpty) {
@@ -62,8 +62,13 @@ void parsing2(
     matches = matches.toList(growable: false).reversed;
   }
 
+  bool updatePattern = false;
   for (final match in matches) {
-    parser(match, data);
+    updatePattern = parser(match, data) || updatePattern;
+  }
+
+  if (updatePattern) {
+    data.updatePattern();
   }
 }
 
