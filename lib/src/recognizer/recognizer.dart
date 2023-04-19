@@ -1,6 +1,7 @@
 import 'package:hors/src/recognizer/part_of_day_recognizer.dart';
 import 'package:hors/src/recognizer/relative_date_recognizer.dart';
 import 'package:hors/src/recognizer/time_recognizer.dart';
+import 'package:hors/src/utils.dart';
 
 import '../data.dart';
 import 'dates_period_recognizer.dart';
@@ -50,7 +51,7 @@ void parsing2(
   void Function(Match match, ParsingData data) parser,
   bool reverse,
 ) {
-  final pattern = data.pattern;
+  final pattern = data.tokens.toPattern;
   Iterable<RegExpMatch> matches = regexp.allMatches(pattern);
 
   if (matches.isEmpty) {
@@ -96,7 +97,7 @@ List<Token>? matchAll(
   List<Token>? Function(Match match, ParsingData data) parser,
 ) {
   final tokens = data.tokens;
-  final pattern = data.pattern;
+  final pattern = data.tokens.toPattern;
   final matches = regexp.allMatches(pattern).iterator;
 
   if (!matches.moveNext()) {

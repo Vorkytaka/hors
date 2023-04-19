@@ -36,31 +36,33 @@ class Hors {
       data = recognizer.recognize(data, fromDatetime);
     }
 
-    final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)((N?[fo]?)(@))');
-    final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)((N?[fot]?)(@))');
+    final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))');
+    final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)(?=((N?[fot]?)(@)))');
 
-    data = parsing(
+    parsing2(
       data,
       startPeriodsPattern,
-      (match, data) => collapseDates(fromDatetime, match, data),
-    );
-
-    data = parsing(
-      data,
-      endPeriodsPattern,
-      (match, data) => collapseDates(fromDatetime, match, data),
+      collapseDates2,
+      true,
     );
 
     parsing2(
       data,
-      RegExp(r'(?<=(t))(@)(?=((N?[fot]?)(@)))'),
+      endPeriodsPattern,
+      collapseDates2,
+      true,
+    );
+
+    parsing2(
+      data,
+      endPeriodsPattern,
       takeFromA,
       true,
     );
 
     parsing2(
       data,
-      RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))'),
+      startPeriodsPattern,
       takeFromA,
       true,
     );
@@ -339,6 +341,44 @@ class ParseResult {
       tokens: tokens,
     );
   }
+}
+
+void collapseDates2(
+  Match match,
+  ParsingData data,
+) {
+  final tokens = data.tokens;
+
+  final firstDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    match.start,
+  );
+  final secondDateIndex = tokens.indexWhere(
+    (token) => token.symbol == '@',
+    firstDateIndex + 1,
+  );
+
+  final firstDate = tokens[firstDateIndex] as DateToken;
+  final secondDate = tokens[secondDateIndex] as DateToken;
+
+  if (!canCollapse(firstDate.date, secondDate.date)) {
+    return;
+  }
+
+  final DateToken? newToken;
+  if (firstDate.date.minFixed.index < secondDate.date.minFixed.index) {
+    newToken = collapse(secondDate, firstDate, false);
+  } else {
+    newToken = collapse(firstDate, secondDate, false);
+  }
+
+  if (newToken == null) return;
+
+  tokens.replaceRange(
+    firstDateIndex,
+    secondDateIndex + 1,
+    [newToken],
+  );
 }
 
 List<Token>? collapseDates(
@@ -659,11 +699,11 @@ List<DateTimeToken> getFinalTokens(
 ) {
   final regexp = RegExp(r'(([fo]?(@)t(@))|([fo]?(@)))');
   final tokens = regexp
-      .allMatches(data.pattern)
+      .allMatches(data.tokens.toPattern)
       .map((match) => parseFinalToken(
             fromDatetime,
             match,
-            data.tokens.sublist(match.start, match.end),
+            data,
           ))
       .toList(growable: false);
 
@@ -673,14 +713,18 @@ List<DateTimeToken> getFinalTokens(
 DateTimeToken parseFinalToken(
   DateTime fromDatetime,
   Match match,
-  List<Token> tokens,
+  ParsingData data,
 ) {
+  final tokens = data.tokens;
   // todo
   final DateTimeToken token;
   if (match.group(3) != null && match.group(4) != null) {
     // if we match a period
     // from date to date
-    final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
+    final firstDateIndex = tokens.indexWhere(
+      (token) => token.symbol == '@',
+      match.start,
+    );
     final secondDateIndex = tokens.indexWhere(
       (token) => token.symbol == '@',
       firstDateIndex + 1,
@@ -731,10 +775,12 @@ DateTimeToken parseFinalToken(
     );
   } else {
     // this is single date
-    final dateToken =
-        tokens.firstWhere((token) => token.symbol == '@') as DateToken;
+    final dateTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == '@',
+      match.start,
+    );
+    final dateToken = tokens[dateTokenIndex] as DateToken;
     token = convertToken(dateToken, fromDatetime);
-    print(token);
   }
 
   // todo start and end
