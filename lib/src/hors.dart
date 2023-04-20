@@ -39,42 +39,37 @@ class Hors {
     final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))');
     final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)(?=((N?[fot]?)(@)))');
 
-    parsing2(
+    parsing(
       data,
       startPeriodsPattern,
       collapseDates2,
-      true,
     );
 
-    parsing2(
+    parsing(
       data,
       endPeriodsPattern,
       collapseDates2,
-      true,
     );
 
-    parsing2(
+    parsing(
       data,
       endPeriodsPattern,
       takeFromA,
-      true,
     );
 
-    parsing2(
+    parsing(
       data,
       startPeriodsPattern,
       takeFromA,
-      true,
     );
 
     if (closestSteps > 1) {
       final regexp = RegExp('(@)[^@t]{1,$closestSteps}(?=(@))');
       int lastGroup = 0;
-      parsing2(
+      parsing(
         data,
         regexp,
         (match, data) => collapseClosest(match, data, lastGroup++),
-        true,
       );
     }
 
@@ -101,11 +96,6 @@ class Hors {
     }
     return token;
   }
-
-  // static List<Token> getTokens(String text) {
-  //   text = text.toLowerCase();
-  //   _allowSymbols.allMatches(text);
-  // }
 
   String? wordToSymbol(String word) {
     final rawWord = word.replaceAll(_extraSymbols, '').toLowerCase().trim();
@@ -319,30 +309,6 @@ class AbstractDate {
   }
 }
 
-class ParseResult {
-  final String output;
-  final List<AbstractDate> tokens;
-
-  const ParseResult({
-    required this.output,
-  }) : tokens = const [];
-
-  const ParseResult._({
-    required this.output,
-    required this.tokens,
-  });
-
-  ParseResult copyWith({
-    required String output,
-    required List<AbstractDate> tokens,
-  }) {
-    return ParseResult._(
-      output: output,
-      tokens: tokens,
-    );
-  }
-}
-
 bool collapseDates2(
   Match match,
   ParsingData data,
@@ -383,47 +349,12 @@ bool collapseDates2(
   return true;
 }
 
-List<Token>? collapseDates(
-  DateTime fromDatetime,
-  Match match,
-  ParsingData data,
-) {
-  final tokens = data.tokens;
-
-  final firstDateIndex = tokens.indexWhere(
-    (token) => token.symbol == '@',
-    match.start,
-  );
-  final secondDateIndex = tokens.indexWhere(
-    (token) => token.symbol == '@',
-    firstDateIndex + 1,
-  );
-
-  final firstDate = tokens[firstDateIndex] as DateToken;
-  final secondDate = tokens[secondDateIndex] as DateToken;
-
-  if (!canCollapse(firstDate.date, secondDate.date)) {
-    return null;
-  }
-
-  final DateToken? newToken;
-  if (firstDate.date.minFixed.index < secondDate.date.minFixed.index) {
-    newToken = collapse(secondDate, firstDate, false);
-  } else {
-    newToken = collapse(firstDate, secondDate, false);
-  }
-
-  if (newToken == null) return null;
-  return [newToken];
-}
-
 bool canCollapse(AbstractDate first, AbstractDate second) {
   if ((first.fixes & second.fixes) != 0) return false;
   return first.spanDirection != -second.spanDirection ||
       first.spanDirection == 0;
 }
 
-// todo isLinked always false?
 DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
   final base = baseToken.date;
   final cover = coverToken.date;
