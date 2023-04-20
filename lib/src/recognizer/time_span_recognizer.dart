@@ -30,8 +30,11 @@ class TimeSpanRecognizer extends Recognizer {
       direction = 1;
     }
 
-    final builder = AbstractDate.builder();
-    builder.spanDirection = direction;
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
+    dateToken.spanDirection = direction;
 
     DateTime offset = fromDatetime.copyWith();
     final letters = match.group(2)?.split('') ?? const [];
@@ -47,53 +50,47 @@ class TimeSpanRecognizer extends Recognizer {
         case 'Y':
           offset = offset.copyWith(year: offset.year + direction * lastNumber);
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.month);
+          dateToken.fixDownTo(FixPeriod.month);
           break;
         case 'm':
           offset =
               offset.copyWith(month: offset.month + direction * lastNumber);
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.week);
+          dateToken.fixDownTo(FixPeriod.week);
           break;
         case 'w':
           offset = offset.add(Duration(days: 7 * direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.day);
+          dateToken.fixDownTo(FixPeriod.day);
           break;
         case 'd':
           offset = offset.add(Duration(days: direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.day);
+          dateToken.fixDownTo(FixPeriod.day);
           break;
         case 'h':
           offset = offset.add(Duration(hours: direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.time);
+          dateToken.fixDownTo(FixPeriod.time);
           break;
         case 'e':
           offset = offset.add(Duration(minutes: direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.time);
+          dateToken.fixDownTo(FixPeriod.time);
           break;
       }
     }
 
-    builder.date = offset;
-    if (builder.isFixed(FixPeriod.time)) {
-      builder.time = Duration(hours: offset.hour, minutes: offset.minute);
+    dateToken.date = offset;
+    if (dateToken.isFixed(FixPeriod.time)) {
+      dateToken.time = Duration(hours: offset.hour, minutes: offset.minute);
     }
-    builder.span = offset.difference(fromDatetime);
+    dateToken.span = offset.difference(fromDatetime);
 
     tokens.replaceRange(
       match.start,
       match.end,
-      [
-        DateToken(
-          start: tokens[match.start].start,
-          end: tokens[match.end - 1].end,
-          date: builder.build(),
-        )
-      ],
+      [dateToken],
     );
 
     return true;

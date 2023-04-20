@@ -55,10 +55,6 @@ class PartOfDayRecognizer extends Recognizer {
       return false;
     }
 
-    final builder = AbstractDate.builder();
-    builder.time = Duration(hours: hourStart);
-    builder.fix(FixPeriod.timeUncertain);
-
     final int start;
     if (preDate != null) {
       start = tokens[match.start + 1].start;
@@ -73,25 +69,32 @@ class PartOfDayRecognizer extends Recognizer {
       end = tokens[match.end - 1].end;
     }
 
+    final dateToken = DateToken(
+      start: start,
+      end: end,
+    );
+    dateToken.time = Duration(hours: hourStart);
+    dateToken.fix(FixPeriod.timeUncertain);
+
     final List<Token> newTokens;
     if (hourStart == hourEnd) {
       newTokens = [
         if (preDate != null) tokens[match.start],
-        DateToken(
-          start: start,
-          end: end,
-          date: builder.build(),
-        ),
+        dateToken,
         if (postDate != null) tokens[match.end - 1],
       ];
     } else {
-      final spanBuilder = AbstractDate.builder(time: Duration(hours: hourEnd));
-      spanBuilder.fix(FixPeriod.timeUncertain);
+      final spanToken = DateToken(
+        start: start,
+        end: end,
+      );
+      spanToken.time = Duration(hours: hourEnd);
+      spanToken.fix(FixPeriod.timeUncertain);
       newTokens = [
         if (preDate != null) tokens[match.start],
-        DateToken(start: start, end: end, date: builder.build()),
+        dateToken,
         TokenParsers.timeTo.toMaybeDateToken(start, end),
-        DateToken(start: start, end: end, date: spanBuilder.build()),
+        spanToken,
         if (postDate != null) tokens[match.end - 1],
       ];
     }

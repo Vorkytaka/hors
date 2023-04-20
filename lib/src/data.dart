@@ -1,5 +1,10 @@
-import 'package:hors/src/hors.dart';
+import 'dart:math';
 
+import 'package:hors/src/hors.dart';
+import 'package:meta/meta.dart';
+
+/// Mutable state for parsing data.
+@internal
 class ParsingData {
   final String sourceText;
   final List<Token> tokens;
@@ -47,13 +52,13 @@ abstract class Token {
     );
   }
 
-  DateToken toDateToken(AbstractDate date) {
-    return DateToken(
-      start: start,
-      end: end,
-      date: date,
-    );
-  }
+// DateToken toDateToken(AbstractDate date) {
+//   return DateToken(
+//     start: start,
+//     end: end,
+//     date: date,
+//   );
+// }
 }
 
 class TextToken extends Token {
@@ -86,17 +91,83 @@ class MaybeDateToken extends Token {
 }
 
 class DateToken extends Token {
-  final AbstractDate date;
+  DateTime? date;
+  Duration? time;
+  Duration? span;
+  int fixes = 0;
+  bool fixDayOfWeek = false;
+  int spanDirection = 0;
+  int? duplicateGroup;
 
-  const DateToken({
+  DateToken({
     required super.start,
     required super.end,
-    required this.date,
   }) : super(text: '{}');
 
   @override
   String get symbol => '@';
 
   @override
-  String toString() => 'DateToken($start, $end, ${date.date})';
+  String toString() => 'DateToken($start, $end)';
+
+  void fix(FixPeriod fix) {
+    fixes = fixes | fix.bit;
+  }
+
+  void fixDownTo(FixPeriod period) {
+    for (final p in FixPeriod.values) {
+      if (p.index < period.index) {
+        continue;
+      }
+
+      fix(p);
+    }
+  }
+
+  bool isFixed(FixPeriod period) {
+    return (fixes & period.bit) > 0;
+  }
+
+  int get maxPeriod {
+    int maxVal = 0;
+    for (final period in FixPeriod.values) {
+      if (period.index > maxVal) {
+        maxVal = period.index;
+      }
+    }
+
+    return log(maxVal).toInt();
+  }
+
+  FixPeriod get maxFixed {
+    for (final period in FixPeriod.values) {
+      if (isFixed(period)) {
+        return period;
+      }
+    }
+
+    return FixPeriod.none;
+  }
+
+  FixPeriod get minFixed {
+    for (final period in FixPeriod.values.reversed) {
+      if (isFixed(period)) {
+        return period;
+      }
+    }
+
+    return FixPeriod.none;
+  }
+
+  DateToken copy({int? start, int? end}) => DateToken(
+        start: start ?? this.start,
+        end: end ?? this.end,
+      )
+        ..date = date
+        ..time = time
+        ..span = span
+        ..fixes = fixes
+        ..fixDayOfWeek = fixDayOfWeek
+        ..spanDirection = spanDirection
+        ..duplicateGroup = duplicateGroup;
 }

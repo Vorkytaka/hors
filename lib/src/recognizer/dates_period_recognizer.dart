@@ -46,13 +46,16 @@ class DatesPeriodRecognizer extends Recognizer {
     }
     final validDay = getValidDayForMonth(fromDatetime.year, month, day);
 
-    final dateBuilder = AbstractDate.builder();
-    dateBuilder.date = DateTime(fromDatetime.year, month, validDay);
-    dateBuilder.fix(FixPeriod.week);
-    dateBuilder.fix(FixPeriod.day);
-    if (monthFixed) dateBuilder.fix(FixPeriod.month);
+    final dateToken = DateToken(
+      start: dayToken.start,
+      end: dayToken.end,
+    );
+    dateToken.date = DateTime(fromDatetime.year, month, validDay);
+    dateToken.fix(FixPeriod.week);
+    dateToken.fix(FixPeriod.day);
+    if (monthFixed) dateToken.fix(FixPeriod.month);
 
-    tokens[dayIndex] = dayToken.toDateToken(dateBuilder.build());
+    tokens[dayIndex] = dateToken;
 
     return true;
   }

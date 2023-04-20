@@ -54,20 +54,18 @@ class MonthRecognizer extends Recognizer {
       yearFixed = true;
     }
 
-    final dateBuilder = AbstractDate.builder(date: DateTime(year, month, 1));
-    dateBuilder.fix(FixPeriod.month);
-    if (yearFixed) dateBuilder.fix(FixPeriod.year);
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
+    dateToken.date = DateTime(year, month, 1);
+    dateToken.fix(FixPeriod.month);
+    if (yearFixed) dateToken.fix(FixPeriod.year);
 
     tokens.replaceRange(
       match.start,
       match.end,
-      [
-        DateToken(
-          start: tokens[match.start].start,
-          end: tokens[match.end - 1].end,
-          date: dateBuilder.build(),
-        )
-      ],
+      [dateToken],
     );
 
     return true;

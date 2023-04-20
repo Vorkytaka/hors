@@ -79,14 +79,20 @@ class TimeRecognizer extends Recognizer {
       }
     }
 
-    final builder = AbstractDate.builder();
-    builder.fix(FixPeriod.timeUncertain);
-    if (hours > 12) builder.fix(FixPeriod.time);
+    final start = tokens[match.start].start;
+    final end = tokens[match.end - 1].end;
+
+    final dateToken = DateToken(
+      start: start,
+      end: end,
+    );
+    dateToken.fix(FixPeriod.timeUncertain);
+    if (hours > 12) dateToken.fix(FixPeriod.time);
 
     if (hours <= 12) {
       final String part = prePartOfDay ?? postPartOfDay ?? 'd';
       if (prePartOfDay != null || postPartOfDay != null) {
-        builder.fix(FixPeriod.time);
+        dateToken.fix(FixPeriod.time);
       }
 
       switch (part) {
@@ -104,10 +110,7 @@ class TimeRecognizer extends Recognizer {
       if (hours >= 24) hours -= 24;
     }
 
-    builder.time = Duration(hours: hours, minutes: minutes);
-
-    final start = tokens[match.start].start;
-    final end = tokens[match.end - 1].end;
+    dateToken.time = Duration(hours: hours, minutes: minutes);
 
     // todo
     tokens.replaceRange(
@@ -116,7 +119,7 @@ class TimeRecognizer extends Recognizer {
       [
         if (match.group(2) == 't')
           TokenParsers.timeTo.toMaybeDateToken(start, end),
-        DateToken(start: start, end: end, date: builder.build()),
+        dateToken,
       ],
     );
 

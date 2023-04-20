@@ -46,20 +46,22 @@ class DayOfMonthRecognizer extends Recognizer {
 
       final day = int.parse(token.text);
       final validDay = getValidDayForMonth(fromDatetime.year, month, day);
-      final dateBuilder = AbstractDate.builder(
-        date: DateTime(
-          fromDatetime.year,
-          month,
-          validDay,
-        ),
+      final dateToken = DateToken(
+        start: token.start,
+        end: token.start,
       );
-      dateBuilder.fix(FixPeriod.week);
-      dateBuilder.fix(FixPeriod.day);
-      if (monthFixed) dateBuilder.fix(FixPeriod.month);
+      dateToken.date = DateTime(
+        fromDatetime.year,
+        month,
+        validDay,
+      );
+      dateToken.fix(FixPeriod.week);
+      dateToken.fix(FixPeriod.day);
+      if (monthFixed) dateToken.fix(FixPeriod.month);
 
       // todo: maybe next month!
 
-      dates.add(token.toDateToken(dateBuilder.build()));
+      dates.add(dateToken);
     }
 
     tokens.replaceRange(

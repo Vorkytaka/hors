@@ -19,11 +19,13 @@ class RelativeDayRecognizer extends Recognizer {
     int? relativeDay = int.tryParse(token.symbol);
     if (relativeDay == null) return false;
     relativeDay -= 4;
-    final builder = AbstractDate.builder(
-      date: fromDatetime.add(Duration(days: relativeDay)),
+    final dateToken = DateToken(
+      start: token.start,
+      end: token.end,
     );
-    builder.fixDownTo(FixPeriod.day);
-    tokens[match.start] = token.toDateToken(builder.build());
+    dateToken.date = fromDatetime.add(Duration(days: relativeDay));
+    dateToken.fixDownTo(FixPeriod.day);
+    tokens[match.start] = dateToken;
     return true;
   }
 }

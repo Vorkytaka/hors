@@ -26,19 +26,17 @@ class YearRecognizer extends Recognizer {
       year += 2000;
     }
 
-    final builder = AbstractDate.builder(date: DateTime(year, 1, 1));
-    builder.fix(FixPeriod.year);
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
+    dateToken.date = DateTime(year, 1, 1);
+    dateToken.fix(FixPeriod.year);
 
     tokens.replaceRange(
       match.start,
       match.end,
-      [
-        DateToken(
-          start: tokens[match.start].start,
-          end: tokens[match.end - 1].end,
-          date: builder.build(),
-        )
-      ],
+      [dateToken],
     );
 
     return true;

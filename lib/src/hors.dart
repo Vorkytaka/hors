@@ -160,155 +160,6 @@ enum FixPeriod {
   const FixPeriod(this.bit);
 }
 
-class AbstractDateBuilder {
-  DateTime? date;
-  Duration? time;
-  Duration? span;
-  int fixes;
-  bool fixDayOfWeek;
-  int spanDirection;
-
-  AbstractDateBuilder._({
-    this.date,
-    this.time,
-    this.span,
-    this.fixes = 0,
-    this.fixDayOfWeek = false,
-    this.spanDirection = 0,
-  });
-
-  AbstractDateBuilder.fromDate(AbstractDate date)
-      : date = date.date,
-        time = date.time,
-        span = date.span,
-        fixes = date.fixes,
-        fixDayOfWeek = date.fixDayOfWeek,
-        spanDirection = date.spanDirection;
-
-  AbstractDate build() {
-    return AbstractDate._(
-      date: date,
-      time: time,
-      span: span,
-      fixes: fixes,
-      fixDayOfWeek: fixDayOfWeek,
-      spanDirection: spanDirection,
-    );
-  }
-
-  void fix(FixPeriod fix) {
-    fixes = fixes | fix.bit;
-  }
-
-  void fixDownTo(FixPeriod period) {
-    for (final p in FixPeriod.values) {
-      if (p.index < period.index) {
-        continue;
-      }
-
-      fix(p);
-    }
-  }
-
-  bool isFixed(FixPeriod period) {
-    return (fixes & period.bit) > 0;
-  }
-
-  int get maxPeriod {
-    int maxVal = 0;
-    for (final period in FixPeriod.values) {
-      if (period.index > maxVal) {
-        maxVal = period.index;
-      }
-    }
-
-    return log(maxVal).toInt();
-  }
-
-  FixPeriod get maxFixed {
-    for (final period in FixPeriod.values) {
-      if (isFixed(period)) {
-        return period;
-      }
-    }
-
-    return FixPeriod.none;
-  }
-}
-
-class AbstractDate {
-  final DateTime? date;
-  final Duration? time;
-  final Duration? span;
-  final int fixes;
-  final bool fixDayOfWeek;
-  final int spanDirection;
-  final int? duplicateGroup;
-
-  AbstractDate._({
-    this.date,
-    this.time,
-    this.span,
-    this.fixes = 0,
-    this.fixDayOfWeek = false,
-    this.spanDirection = 0,
-    this.duplicateGroup,
-  });
-
-  static AbstractDateBuilder builder({
-    DateTime? date,
-    Duration? time,
-    Duration? span,
-    int fixes = 0,
-    bool fixDayOfWeek = false,
-    int? spanDirection,
-  }) =>
-      AbstractDateBuilder._(
-        date: date,
-        time: time,
-        span: span,
-        fixes: fixes,
-        fixDayOfWeek: fixDayOfWeek,
-        spanDirection: spanDirection ?? 0,
-      );
-
-  bool isFixed(FixPeriod period) {
-    return (fixes & period.bit) > 0;
-  }
-
-  FixPeriod get minFixed {
-    for (final period in FixPeriod.values.reversed) {
-      if (isFixed(period)) {
-        return period;
-      }
-    }
-
-    return FixPeriod.none;
-  }
-
-  FixPeriod get maxFixed {
-    for (final period in FixPeriod.values) {
-      if (isFixed(period)) {
-        return period;
-      }
-    }
-
-    return FixPeriod.none;
-  }
-
-  AbstractDate withDuplicateGroup(int group) {
-    return AbstractDate._(
-      date: date,
-      time: time,
-      span: span,
-      fixes: fixes,
-      fixDayOfWeek: fixDayOfWeek,
-      spanDirection: spanDirection,
-      duplicateGroup: group,
-    );
-  }
-}
-
 bool collapseDates2(
   Match match,
   ParsingData data,
@@ -327,12 +178,12 @@ bool collapseDates2(
   final firstDate = tokens[firstDateIndex] as DateToken;
   final secondDate = tokens[secondDateIndex] as DateToken;
 
-  if (!canCollapse(firstDate.date, secondDate.date)) {
+  if (!canCollapse(firstDate, secondDate)) {
     return false;
   }
 
   final DateToken? newToken;
-  if (firstDate.date.minFixed.index < secondDate.date.minFixed.index) {
+  if (firstDate.minFixed.index < secondDate.minFixed.index) {
     newToken = collapse(secondDate, firstDate, false);
   } else {
     newToken = collapse(firstDate, secondDate, false);
@@ -349,95 +200,100 @@ bool collapseDates2(
   return true;
 }
 
-bool canCollapse(AbstractDate first, AbstractDate second) {
-  if ((first.fixes & second.fixes) != 0) return false;
-  return first.spanDirection != -second.spanDirection ||
-      first.spanDirection == 0;
+bool canCollapse(DateToken firstToken, DateToken secondToken) {
+  if ((firstToken.fixes & secondToken.fixes) != 0) return false;
+  return firstToken.spanDirection != -secondToken.spanDirection ||
+      firstToken.spanDirection == 0;
 }
 
 DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
-  final base = baseToken.date;
-  final cover = coverToken.date;
-
-  if (!canCollapse(base, cover)) {
+  if (!canCollapse(baseToken, coverToken)) {
     return null;
   }
 
   // todo: if base date is null?
-  final builder = AbstractDateBuilder.fromDate(base);
+  final newToken = baseToken.copy(
+    start: min(baseToken.start, coverToken.start),
+    end: max(baseToken.end, coverToken.end),
+  );
 
-  if (base.spanDirection != 0 && cover.spanDirection != 0) {
-    builder.spanDirection = base.spanDirection + cover.spanDirection;
+  if (baseToken.spanDirection != 0 && coverToken.spanDirection != 0) {
+    newToken.spanDirection = baseToken.spanDirection + coverToken.spanDirection;
   }
 
-  if (!base.isFixed(FixPeriod.year) && cover.isFixed(FixPeriod.year)) {
-    builder.date = DateTime(
-      cover.date!.year,
-      builder.date!.month,
-      builder.date!.day,
+  if (!baseToken.isFixed(FixPeriod.year) &&
+      coverToken.isFixed(FixPeriod.year)) {
+    newToken.date = DateTime(
+      coverToken.date!.year,
+      newToken.date!.month,
+      newToken.date!.day,
     );
-    builder.fix(FixPeriod.year);
+    newToken.fix(FixPeriod.year);
   }
 
-  if (!base.isFixed(FixPeriod.month) && cover.isFixed(FixPeriod.month)) {
-    builder.date = DateTime(
-      builder.date!.year,
-      cover.date!.month,
-      builder.date!.day,
+  if (!baseToken.isFixed(FixPeriod.month) &&
+      coverToken.isFixed(FixPeriod.month)) {
+    newToken.date = DateTime(
+      newToken.date!.year,
+      coverToken.date!.month,
+      newToken.date!.day,
     );
-    builder.fix(FixPeriod.month);
+    newToken.fix(FixPeriod.month);
   }
 
-  if (!base.isFixed(FixPeriod.week) && cover.isFixed(FixPeriod.week)) {
-    if (base.isFixed(FixPeriod.day)) {
-      builder.date = takeDayOfWeekFrom(cover.date!, builder.date!);
-      builder.fix(FixPeriod.week);
-    } else if (!cover.isFixed(FixPeriod.day)) {
-      builder.date = DateTime(
-        builder.date!.year,
-        builder.date!.month,
-        cover.date!.day,
+  if (!baseToken.isFixed(FixPeriod.week) &&
+      coverToken.isFixed(FixPeriod.week)) {
+    if (baseToken.isFixed(FixPeriod.day)) {
+      newToken.date = takeDayOfWeekFrom(coverToken.date!, newToken.date!);
+      newToken.fix(FixPeriod.week);
+    } else if (!coverToken.isFixed(FixPeriod.day)) {
+      newToken.date = DateTime(
+        newToken.date!.year,
+        newToken.date!.month,
+        coverToken.date!.day,
       );
-      builder.fix(FixPeriod.week);
+      newToken.fix(FixPeriod.week);
     }
-  } else if (base.isFixed(FixPeriod.week) && cover.isFixed(FixPeriod.day)) {
-    builder.date = takeDayOfWeekFrom(builder.date!, cover.date!);
-    builder.fix(FixPeriod.week);
-    builder.fix(FixPeriod.day);
+  } else if (baseToken.isFixed(FixPeriod.week) &&
+      coverToken.isFixed(FixPeriod.day)) {
+    newToken.date = takeDayOfWeekFrom(newToken.date!, coverToken.date!);
+    newToken.fix(FixPeriod.week);
+    newToken.fix(FixPeriod.day);
   }
 
-  if (!base.isFixed(FixPeriod.day) && cover.isFixed(FixPeriod.day)) {
-    if (cover.fixDayOfWeek) {
+  if (!baseToken.isFixed(FixPeriod.day) && coverToken.isFixed(FixPeriod.day)) {
+    if (coverToken.fixDayOfWeek) {
       final current = DateTime(
-        builder.date!.year,
-        builder.date!.month,
-        builder.isFixed(FixPeriod.week) ? builder.date!.day : 0,
+        newToken.date!.year,
+        newToken.date!.month,
+        newToken.isFixed(FixPeriod.week) ? newToken.date!.day : 0,
       );
-      builder.date = takeDayOfWeekFrom(
+      newToken.date = takeDayOfWeekFrom(
         current,
-        cover.date!,
-        !base.isFixed(FixPeriod.week),
+        coverToken.date!,
+        !baseToken.isFixed(FixPeriod.week),
       );
     } else {
-      builder.date = DateTime(
-        builder.date!.year,
-        builder.date!.month,
-        cover.date!.day,
+      newToken.date = DateTime(
+        newToken.date!.year,
+        newToken.date!.month,
+        coverToken.date!.day,
       );
     }
-    builder.fix(FixPeriod.week);
-    builder.fix(FixPeriod.day);
+    newToken.fix(FixPeriod.week);
+    newToken.fix(FixPeriod.day);
   }
 
   bool timeGot = false;
-  if (!base.isFixed(FixPeriod.time) && cover.isFixed(FixPeriod.time)) {
-    builder.fix(FixPeriod.time);
-    if (!base.isFixed(FixPeriod.timeUncertain)) {
-      builder.time = cover.time;
+  if (!baseToken.isFixed(FixPeriod.time) &&
+      coverToken.isFixed(FixPeriod.time)) {
+    newToken.fix(FixPeriod.time);
+    if (!baseToken.isFixed(FixPeriod.timeUncertain)) {
+      newToken.time = coverToken.time;
     } else {
-      if (base.time!.hours <= 12 && cover.time!.hours > 12) {
+      if (baseToken.time!.hours <= 12 && coverToken.time!.hours > 12) {
         if (!isLinked) {
-          builder.time = builder.time! + Duration(hours: 12);
+          newToken.time = newToken.time! + Duration(hours: 12);
         }
       }
     }
@@ -445,34 +301,33 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
     timeGot = true;
   }
 
-  if (!base.isFixed(FixPeriod.timeUncertain) &&
-      cover.isFixed(FixPeriod.timeUncertain)) {
-    builder.fix(FixPeriod.timeUncertain);
-    if (base.isFixed(FixPeriod.time)) {
-      final offset = cover.time!.hours <= 12 && base.time!.hours > 12 ? 12 : 0;
-      builder.time = Duration(
-        hours: cover.time!.hours + offset,
-        minutes: cover.time!.minutes,
+  if (!baseToken.isFixed(FixPeriod.timeUncertain) &&
+      coverToken.isFixed(FixPeriod.timeUncertain)) {
+    newToken.fix(FixPeriod.timeUncertain);
+    if (baseToken.isFixed(FixPeriod.time)) {
+      final offset =
+          coverToken.time!.hours <= 12 && baseToken.time!.hours > 12 ? 12 : 0;
+      newToken.time = Duration(
+        hours: coverToken.time!.hours + offset,
+        minutes: coverToken.time!.minutes,
       );
     } else {
-      builder.time = cover.time;
+      newToken.time = coverToken.time;
       timeGot = true;
     }
   }
 
-  if (timeGot && base.spanDirection != 0 && cover.spanDirection == 0) {
-    if (base.spanDirection > 0) {
-      builder.span = base.time! + base.time!;
+  if (timeGot &&
+      baseToken.spanDirection != 0 &&
+      coverToken.spanDirection == 0) {
+    if (baseToken.spanDirection > 0) {
+      newToken.span = baseToken.time! + baseToken.time!;
     } else {
-      builder.span = base.time! - base.time!;
+      newToken.span = baseToken.time! - baseToken.time!;
     }
   }
 
-  return DateToken(
-    start: min(baseToken.start, coverToken.start),
-    end: max(baseToken.end, coverToken.end),
-    date: builder.build(),
-  );
+  return newToken;
 }
 
 // todo: Это практически прямая реализация TimeSpan из C#
@@ -531,24 +386,14 @@ List<DateToken> takeFromAdjacent(
   DateToken secondToken,
   bool isLinked,
 ) {
-  final firstDateCopy = AbstractDateBuilder.fromDate(firstToken.date);
-  firstDateCopy.fixes &= ~secondToken.date.fixes;
-  final firstCopy = DateToken(
-    start: firstToken.start,
-    end: firstToken.end,
-    date: firstDateCopy.build(),
-  );
+  final firstCopy = firstToken.copy();
+  firstCopy.fixes &= ~secondToken.fixes;
 
-  final secondDateCopy = AbstractDateBuilder.fromDate(secondToken.date);
-  secondDateCopy.fixes &= ~firstToken.date.fixes;
-  final secondCopy = DateToken(
-    start: secondToken.start,
-    end: secondToken.end,
-    date: secondDateCopy.build(),
-  );
+  final secondCopy = secondToken.copy();
+  secondCopy.fixes &= ~firstToken.fixes;
 
   final newTokens = <DateToken>[];
-  if (firstToken.date.minFixed.index > secondCopy.date.minFixed.index) {
+  if (firstToken.minFixed.index > secondCopy.minFixed.index) {
     final token = collapse(firstToken, secondCopy, isLinked);
     newTokens.add(token ?? firstToken);
   } else {
@@ -556,7 +401,7 @@ List<DateToken> takeFromAdjacent(
     newTokens.add(token ?? firstToken);
   }
 
-  if (secondToken.date.minFixed.index > firstCopy.date.minFixed.index) {
+  if (secondToken.minFixed.index > firstCopy.minFixed.index) {
     final token = collapse(secondToken, firstCopy, isLinked);
     newTokens.add(token ?? secondToken);
   } else {
@@ -586,13 +431,13 @@ bool collapseClosest(
   final firstDate = tokens[firstDateIndex] as DateToken;
   final secondDate = tokens[secondDateIndex] as DateToken;
 
-  if (!canCollapse(firstDate.date, secondDate.date)) {
+  if (!canCollapse(firstDate, secondDate)) {
     return false;
   }
 
   DateToken newFirst;
   DateToken newSecond;
-  if (firstDate.date.minFixed.index > secondDate.date.minFixed.index) {
+  if (firstDate.minFixed.index > secondDate.minFixed.index) {
     newFirst = collapse(firstDate, secondDate, true) ?? firstDate;
     newSecond = secondDate;
   } else {
@@ -601,26 +446,16 @@ bool collapseClosest(
   }
 
   final int duplicateGroup;
-  if (firstDate.date.duplicateGroup != null) {
-    duplicateGroup = firstDate.date.duplicateGroup!;
-  } else if (secondDate.date.duplicateGroup != null) {
-    duplicateGroup = secondDate.date.duplicateGroup!;
+  if (firstDate.duplicateGroup != null) {
+    duplicateGroup = firstDate.duplicateGroup!;
+  } else if (secondDate.duplicateGroup != null) {
+    duplicateGroup = secondDate.duplicateGroup!;
   } else {
     duplicateGroup = group;
   }
 
-  // todo: some code improvement
-  newFirst = DateToken(
-    start: newFirst.start,
-    end: newFirst.end,
-    date: newFirst.date.withDuplicateGroup(duplicateGroup),
-  );
-
-  newSecond = DateToken(
-    start: newSecond.start,
-    end: newSecond.end,
-    date: newSecond.date.withDuplicateGroup(duplicateGroup),
-  );
+  newFirst.duplicateGroup = duplicateGroup;
+  newSecond.duplicateGroup = duplicateGroup;
 
   // todo
   tokens
@@ -678,7 +513,7 @@ DateTimeToken parseFinalToken(
     final toToken = convertToken(secondDate, fromDatetime);
     DateTime dateTo = toToken.date;
 
-    final resolution = secondDate.date.maxFixed;
+    final resolution = secondDate.maxFixed;
     while (dateTo.isBefore(fromToken.date)) {
       // ignore: missing_enum_constant_in_switch
       switch (resolution) {
@@ -790,55 +625,53 @@ class DateTimeTokenBuilder {
 }
 
 DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
-  final minFixed = token.date.minFixed;
-  final dateBuilder = AbstractDateBuilder.fromDate(token.date);
-  dateBuilder.fixDownTo(minFixed);
+  final minFixed = token.minFixed;
+  token.fixDownTo(minFixed);
 
   // ignore: missing_enum_constant_in_switch
   switch (minFixed) {
     case FixPeriod.time:
     case FixPeriod.timeUncertain:
-      dateBuilder.date = fromDatetime;
+      token.date = fromDatetime;
       break;
     case FixPeriod.day:
       final userDow = fromDatetime.weekday;
-      final dateDow = dateBuilder.date!.weekday;
+      final dateDow = token.date!.weekday;
       int diff = dateDow - userDow;
       if (diff <= 0) {
         diff += 7;
       }
       final newDate = fromDatetime.add(Duration(days: diff));
-      dateBuilder.date = DateTime(
+      token.date = DateTime(
         newDate.year,
         newDate.month,
         newDate.day,
       );
       break;
     case FixPeriod.month:
-      dateBuilder.date = DateTime(
-        fromDatetime.isAfter(dateBuilder.date!)
+      token.date = DateTime(
+        fromDatetime.isAfter(token.date!)
             ? fromDatetime.year + 1
             : fromDatetime.year,
-        dateBuilder.date!.month,
-        dateBuilder.date!.day,
+        token.date!.month,
+        token.date!.day,
       );
       break;
   }
 
-  if (dateBuilder.isFixed(FixPeriod.time) ||
-      dateBuilder.isFixed(FixPeriod.timeUncertain)) {
-    dateBuilder.date = DateTime(
-      dateBuilder.date!.year,
-      dateBuilder.date!.month,
-      dateBuilder.date!.day,
-      dateBuilder.time!.hours,
-      dateBuilder.time!.minutes,
+  if (token.isFixed(FixPeriod.time) || token.isFixed(FixPeriod.timeUncertain)) {
+    token.date = DateTime(
+      token.date!.year,
+      token.date!.month,
+      token.date!.day,
+      token.time!.hours,
+      token.time!.minutes,
     );
   } else {
-    dateBuilder.date = DateTime(
-      dateBuilder.date!.year,
-      dateBuilder.date!.month,
-      dateBuilder.date!.day,
+    token.date = DateTime(
+      token.date!.year,
+      token.date!.month,
+      token.date!.day,
     );
   }
 
@@ -847,40 +680,40 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
     end: token.end,
   );
 
-  builder.duplicateGroup = token.date.duplicateGroup;
+  builder.duplicateGroup = token.duplicateGroup;
 
   // ignore: missing_enum_constant_in_switch
-  switch (dateBuilder.maxFixed) {
+  switch (token.maxFixed) {
     case FixPeriod.time:
     case FixPeriod.timeUncertain:
       builder.type = DateTimeTokenType.fixed;
-      builder.date = dateBuilder.date;
-      builder.dateTo = dateBuilder.date;
+      builder.date = token.date;
+      builder.dateTo = token.date;
       builder.hasTime = true;
       break;
     case FixPeriod.day:
       builder.type = DateTimeTokenType.fixed;
-      builder.date = dateBuilder.date;
-      builder.dateTo = dateBuilder.date!.add(almostOneDay);
+      builder.date = token.date;
+      builder.dateTo = token.date!.add(almostOneDay);
       break;
     case FixPeriod.week:
-      final weekday = dateBuilder.date!.weekday;
+      final weekday = token.date!.weekday;
       builder.type = DateTimeTokenType.period;
-      builder.date = dateBuilder.date!.add(Duration(days: 1 - weekday));
+      builder.date = token.date!.add(Duration(days: 1 - weekday));
       builder.dateTo =
-          dateBuilder.date!.add(Duration(days: 7 - weekday)).add(almostOneDay);
+          token.date!.add(Duration(days: 7 - weekday)).add(almostOneDay);
       break;
     case FixPeriod.month:
       builder.type = DateTimeTokenType.period;
       builder.date = DateTime(
-        dateBuilder.date!.year,
-        dateBuilder.date!.month,
+        token.date!.year,
+        token.date!.month,
         1,
       );
       builder.dateTo = DateTime(
-        dateBuilder.date!.year,
-        dateBuilder.date!.month,
-        getDaysInMonth(dateBuilder.date!.year, dateBuilder.date!.month),
+        token.date!.year,
+        token.date!.month,
+        getDaysInMonth(token.date!.year, token.date!.month),
         23,
         59,
         59,
@@ -890,12 +723,12 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
     case FixPeriod.year:
       builder.type = DateTimeTokenType.period;
       builder.date = DateTime(
-        dateBuilder.date!.year,
+        token.date!.year,
         1,
         1,
       );
       builder.dateTo = DateTime(
-        dateBuilder.date!.year,
+        token.date!.year,
         12,
         31,
         23,
@@ -906,11 +739,11 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
       break;
   }
 
-  if (dateBuilder.spanDirection != 0) {
-    builder.type = dateBuilder.spanDirection > 0
+  if (token.spanDirection != 0) {
+    builder.type = token.spanDirection > 0
         ? DateTimeTokenType.spanForward
         : DateTimeTokenType.spanBackward;
-    builder.span = dateBuilder.span;
+    builder.span = token.span;
   }
 
   return builder.build();

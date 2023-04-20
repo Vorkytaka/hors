@@ -28,7 +28,10 @@ class DayOfWeekRecognizer extends Recognizer {
     final currentDayOfWeek = fromDatetime.weekday;
     int diff = weekday - currentDayOfWeek;
 
-    final dateBuilder = AbstractDate.builder();
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
 
     final relate = match.group(1);
     if (relate != null) {
@@ -43,24 +46,18 @@ class DayOfWeekRecognizer extends Recognizer {
           diff -= 7;
           break;
       }
-      dateBuilder.fixDownTo(FixPeriod.day);
+      dateToken.fixDownTo(FixPeriod.day);
     } else {
-      dateBuilder.fix(FixPeriod.day);
-      dateBuilder.fixDayOfWeek = true;
+      dateToken.fix(FixPeriod.day);
+      dateToken.fixDayOfWeek = true;
     }
 
-    dateBuilder.date = fromDatetime.add(Duration(days: diff));
+    dateToken.date = fromDatetime.add(Duration(days: diff));
 
     tokens.replaceRange(
       match.start,
       match.end,
-      [
-        DateToken(
-          date: dateBuilder.build(),
-          start: tokens[match.start].start,
-          end: tokens[match.end - 1].end,
-        )
-      ],
+      [dateToken],
     );
 
     return true;
