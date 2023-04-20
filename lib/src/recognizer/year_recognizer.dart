@@ -8,7 +8,7 @@ class YearRecognizer extends Recognizer {
   RegExp get regexp => RegExp(r'(1)Y?|(0)Y'); // [в] 15 году/2017 (году)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -18,7 +18,7 @@ class YearRecognizer extends Recognizer {
     final yearStr = tokens[match.start].text;
     int? year = int.tryParse(yearStr);
 
-    if (year == null) return null;
+    if (year == null) return false;
 
     if (year >= 70 && year < 100) {
       year += 1900;
@@ -29,12 +29,18 @@ class YearRecognizer extends Recognizer {
     final builder = AbstractDate.builder(date: DateTime(year, 1, 1));
     builder.fix(FixPeriod.year);
 
-    return [
-      DateToken(
-        start: tokens[match.start].start,
-        end: tokens[match.end - 1].end,
-        date: builder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        DateToken(
+          start: tokens[match.start].start,
+          end: tokens[match.end - 1].end,
+          date: builder.build(),
+        )
+      ],
+    );
+
+    return true;
   }
 }

@@ -32,16 +32,17 @@ abstract class Recognizer {
 
   RegExp get regexp;
 
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
   );
 
-  ParsingData recognize(ParsingData data, DateTime fromDatetime) => parsing(
+  void recognize(ParsingData data, DateTime fromDatetime) => parsing2(
         data,
         regexp,
         (match, tokens) => parser(fromDatetime, match, tokens),
+        true,
       );
 }
 

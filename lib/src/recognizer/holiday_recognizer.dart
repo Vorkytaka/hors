@@ -10,7 +10,7 @@ class HolidayRecognizer extends Recognizer {
   RegExp get regexp => RegExp(r'W');
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -23,14 +23,25 @@ class HolidayRecognizer extends Recognizer {
       ParserPluralOption.singular,
     );
 
+    final List<Token> newTokens;
     if (symbol != null) {
-      return [TokenParsers.saturday.toMaybeDateToken(token.start, token.end)];
+      newTokens = [
+        TokenParsers.saturday.toMaybeDateToken(token.start, token.end),
+      ];
     } else {
-      return [
+      newTokens = [
         TokenParsers.saturday.toMaybeDateToken(token.start, token.end),
         TokenParsers.timeTo.toMaybeDateToken(token.start, token.end),
         TokenParsers.sunday.toMaybeDateToken(token.start, token.end),
       ];
     }
+
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      newTokens,
+    );
+
+    return true;
   }
 }

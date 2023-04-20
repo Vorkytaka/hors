@@ -10,7 +10,7 @@ class TimeSpanRecognizer extends Recognizer {
       r'(i)?((0?[Ymwdhe]N?)+)([bl])?'); // (через) год и месяц и 2 дня 4 часа 10 минут (спустя/назад)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -20,7 +20,7 @@ class TimeSpanRecognizer extends Recognizer {
     final prefix = match.group(1);
     final postfix = match.group(4);
     if (!((prefix != null) ^ (postfix != null))) {
-      return null;
+      return false;
     }
 
     final int direction;
@@ -84,12 +84,18 @@ class TimeSpanRecognizer extends Recognizer {
     }
     builder.span = offset.difference(fromDatetime);
 
-    return [
-      DateToken(
-        start: tokens[match.start].start,
-        end: tokens[match.end - 1].end,
-        date: builder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        DateToken(
+          start: tokens[match.start].start,
+          end: tokens[match.end - 1].end,
+          date: builder.build(),
+        )
+      ],
+    );
+
+    return true;
   }
 }

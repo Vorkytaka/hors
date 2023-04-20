@@ -11,7 +11,7 @@ class DayOfMonthRecognizer extends Recognizer {
       RegExp(r'((0N?)+)([M#])'); // 24, 25, 26... и 27 января/числа
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -62,6 +62,12 @@ class DayOfMonthRecognizer extends Recognizer {
       dates.add(token.toDateToken(dateBuilder.build()));
     }
 
-    return dates;
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      dates,
+    );
+
+    return true;
   }
 }

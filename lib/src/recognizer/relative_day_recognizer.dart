@@ -9,7 +9,7 @@ class RelativeDayRecognizer extends Recognizer {
   RegExp get regexp => RegExp(r'[2-6]');
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -17,12 +17,13 @@ class RelativeDayRecognizer extends Recognizer {
     final tokens = data.tokens;
     final token = tokens[match.start];
     int? relativeDay = int.tryParse(token.symbol);
-    if (relativeDay == null) return null;
+    if (relativeDay == null) return false;
     relativeDay -= 4;
     final builder = AbstractDate.builder(
       date: fromDatetime.add(Duration(days: relativeDay)),
     );
     builder.fixDownTo(FixPeriod.day);
-    return [token.toDateToken(builder.build())];
+    tokens[match.start] = token.toDateToken(builder.build());
+    return true;
   }
 }

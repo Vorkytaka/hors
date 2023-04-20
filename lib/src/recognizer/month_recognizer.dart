@@ -10,7 +10,7 @@ class MonthRecognizer extends Recognizer {
       RegExp(r'([usxy])?M'); // [в] (прошлом|этом|следующем) марте
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -58,12 +58,18 @@ class MonthRecognizer extends Recognizer {
     dateBuilder.fix(FixPeriod.month);
     if (yearFixed) dateBuilder.fix(FixPeriod.year);
 
-    return [
-      DateToken(
-        start: tokens[match.start].start,
-        end: tokens[match.end - 1].end,
-        date: dateBuilder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        DateToken(
+          start: tokens[match.start].start,
+          end: tokens[match.end - 1].end,
+          date: dateBuilder.build(),
+        )
+      ],
+    );
+
+    return true;
   }
 }

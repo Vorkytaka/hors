@@ -11,7 +11,7 @@ class TimeRecognizer extends Recognizer {
       r'([rvgd])?([fot])?([QH])?(h|(0)(h)?)((0)e?)?([rvgd])?'); // (в/с/до) (половину/четверть) час/9 (часов) (30 (минут)) (утра/дня/вечера/ночи)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -27,7 +27,7 @@ class TimeRecognizer extends Recognizer {
         number == null &&
         match.group(6) == null &&
         postPartOfDay == null) {
-      return null;
+      return false;
     }
 
     if (number == null) {
@@ -35,7 +35,7 @@ class TimeRecognizer extends Recognizer {
 
       // no part of day AND no "from" token in phrase, quit
       if (partOfDay != 'd' && partOfDay != 'g' && match.group(2) == null) {
-        return null;
+        return false;
       }
     }
 
@@ -52,7 +52,7 @@ class TimeRecognizer extends Recognizer {
     }
 
     if (hours < 0 || hours > 23) {
-      return null;
+      return false;
     }
 
     int minutes = 0;
@@ -108,10 +108,18 @@ class TimeRecognizer extends Recognizer {
 
     final start = tokens[match.start].start;
     final end = tokens[match.end - 1].end;
-    return [
-      if (match.group(2) == 't')
-        TokenParsers.timeTo.toMaybeDateToken(start, end),
-      DateToken(start: start, end: end, date: builder.build()),
-    ];
+
+    // todo
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        if (match.group(2) == 't')
+          TokenParsers.timeTo.toMaybeDateToken(start, end),
+        DateToken(start: start, end: end, date: builder.build()),
+      ],
+    );
+
+    return true;
   }
 }

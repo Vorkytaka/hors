@@ -9,7 +9,7 @@ class RelativeDateRecognizer extends Recognizer {
       r'([usxy])([Ymwd])'); // [в/на] следующей/этой/предыдущей год/месяц/неделе/день
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -52,12 +52,18 @@ class RelativeDateRecognizer extends Recognizer {
         break;
     }
 
-    return [
-      DateToken(
-        start: tokens[match.start].start,
-        end: tokens[match.end - 1].end,
-        date: builder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        DateToken(
+          start: tokens[match.start].start,
+          end: tokens[match.end - 1].end,
+          date: builder.build(),
+        )
+      ],
+    );
+
+    return true;
   }
 }

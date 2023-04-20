@@ -10,7 +10,7 @@ class DayOfWeekRecognizer extends Recognizer {
       RegExp(r'([usxy])?(D)'); // [в] (следующий/этот/предыдущий) понедельник
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -23,7 +23,7 @@ class DayOfWeekRecognizer extends Recognizer {
     final weekdayToken = tokens[weekdayTokenIndex];
     final weekday = TokenParsers.daysOfWeek.parseOrder(weekdayToken.text);
 
-    if (weekday == null) return null;
+    if (weekday == null) return false;
 
     final currentDayOfWeek = fromDatetime.weekday;
     int diff = weekday - currentDayOfWeek;
@@ -51,12 +51,18 @@ class DayOfWeekRecognizer extends Recognizer {
 
     dateBuilder.date = fromDatetime.add(Duration(days: diff));
 
-    return [
-      DateToken(
-        date: dateBuilder.build(),
-        start: tokens[match.start].start,
-        end: tokens[match.end - 1].end,
-      ),
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        DateToken(
+          date: dateBuilder.build(),
+          start: tokens[match.start].start,
+          end: tokens[match.end - 1].end,
+        )
+      ],
+    );
+
+    return true;
   }
 }

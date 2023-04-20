@@ -29,11 +29,11 @@ class Hors {
           .allMatches(text.toLowerCase())
           .map(_matchToTextToken)
           .map(_tokenToMaybeDate)
-          .toList(growable: false),
+          .toList(),
     );
 
     for (final recognizer in recognizers) {
-      data = recognizer.recognize(data, fromDatetime);
+      recognizer.recognize(data, fromDatetime);
     }
 
     final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))');

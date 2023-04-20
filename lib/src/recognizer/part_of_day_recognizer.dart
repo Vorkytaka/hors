@@ -11,7 +11,7 @@ class PartOfDayRecognizer extends Recognizer {
       r'(@)?f?([ravgdn])f?(@)?'); // (дата) (в/с) утром/днём/вечером/ночью (в/с) (дата)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -22,7 +22,7 @@ class PartOfDayRecognizer extends Recognizer {
     final postDate = match.group(3);
 
     if (preDate == null && postDate == null) {
-      return null;
+      return false;
     }
 
     int hourStart = 0;
@@ -52,7 +52,7 @@ class PartOfDayRecognizer extends Recognizer {
     }
 
     if (hourStart == 0) {
-      return null;
+      return false;
     }
 
     final builder = AbstractDate.builder();
@@ -73,8 +73,9 @@ class PartOfDayRecognizer extends Recognizer {
       end = tokens[match.end - 1].end;
     }
 
+    final List<Token> newTokens;
     if (hourStart == hourEnd) {
-      return [
+      newTokens = [
         if (preDate != null) tokens[match.start],
         DateToken(
           start: start,
@@ -86,7 +87,7 @@ class PartOfDayRecognizer extends Recognizer {
     } else {
       final spanBuilder = AbstractDate.builder(time: Duration(hours: hourEnd));
       spanBuilder.fix(FixPeriod.timeUncertain);
-      return [
+      newTokens = [
         if (preDate != null) tokens[match.start],
         DateToken(start: start, end: end, date: builder.build()),
         TokenParsers.timeTo.toMaybeDateToken(start, end),
@@ -94,5 +95,14 @@ class PartOfDayRecognizer extends Recognizer {
         if (postDate != null) tokens[match.end - 1],
       ];
     }
+
+    // todo: better way to replace
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      newTokens,
+    );
+
+    return true;
   }
 }

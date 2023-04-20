@@ -11,7 +11,7 @@ class DatesPeriodRecognizer extends Recognizer {
   RegExp get regexp => RegExp(r'f?(0)[ot]0([M#])'); // с 26 до 27 января/числа
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
@@ -41,7 +41,9 @@ class DatesPeriodRecognizer extends Recognizer {
     );
     final dayToken = tokens[dayIndex];
     int? day = int.tryParse(dayToken.text);
-    if (day == null) return null;
+    if (day == null) {
+      return false;
+    }
     final validDay = getValidDayForMonth(fromDatetime.year, month, day);
 
     final dateBuilder = AbstractDate.builder();
@@ -50,6 +52,8 @@ class DatesPeriodRecognizer extends Recognizer {
     dateBuilder.fix(FixPeriod.day);
     if (monthFixed) dateBuilder.fix(FixPeriod.month);
 
-    return [...tokens]..[dayIndex] = dayToken.toDateToken(dateBuilder.build());
+    tokens[dayIndex] = dayToken.toDateToken(dateBuilder.build());
+
+    return true;
   }
 }
