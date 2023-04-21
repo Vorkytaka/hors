@@ -32,6 +32,8 @@ class Hors {
           .toList(),
     );
 
+    _fixZeros(data);
+
     for (final recognizer in recognizers) {
       recognizer.recognize(data, fromDatetime);
     }
@@ -90,14 +92,14 @@ class Hors {
   }
 
   Token _tokenToMaybeDate(Token token) {
-    final symbol = wordToSymbol(token.text);
+    final symbol = _wordToSymbol(token.text);
     if (symbol != null) {
       return token.toMaybeDateToken(symbol);
     }
     return token;
   }
 
-  String? wordToSymbol(String word) {
+  String? _wordToSymbol(String word) {
     final rawWord = word.replaceAll(_extraSymbols, '').toLowerCase().trim();
 
     for (final token in tokenParsers) {
@@ -106,6 +108,18 @@ class Hors {
     }
 
     return null;
+  }
+
+  // todo: do we need it?
+  void _fixZeros(ParsingData data) {
+    for (int i = data.tokens.length - 1; i > 0; i--) {
+      if (data.tokens[i - 1].text == '0' &&
+          int.tryParse(data.tokens[i].text) != null) {
+        data.tokens.removeAt(i - 1);
+      }
+    }
+
+    data.updatePattern();
   }
 }
 
@@ -119,15 +133,6 @@ class HorsResult {
     required this.source,
     required this.tokens,
   });
-
-  // todo: better algo + results
-  String get textWithoutDates {
-    String str = source;
-    for (final token in tokens.reversed) {
-      str = str.replaceRange(token.start, token.end, '');
-    }
-    return str.trim();
-  }
 
   @override
   bool operator ==(Object other) =>
@@ -201,7 +206,7 @@ bool collapseDates2(
 }
 
 bool canCollapse(DateToken firstToken, DateToken secondToken) {
-  if ((firstToken.fixes & secondToken.fixes) != 0) return false;
+  if ((firstToken.fixed & secondToken.fixed) != 0) return false;
   return firstToken.spanDirection != -secondToken.spanDirection ||
       firstToken.spanDirection == 0;
 }
@@ -387,10 +392,10 @@ List<DateToken> takeFromAdjacent(
   bool isLinked,
 ) {
   final firstCopy = firstToken.copy();
-  firstCopy.fixes &= ~secondToken.fixes;
+  firstCopy.fixed &= ~secondToken.fixed;
 
   final secondCopy = secondToken.copy();
-  secondCopy.fixes &= ~firstToken.fixes;
+  secondCopy.fixed &= ~firstToken.fixed;
 
   final newTokens = <DateToken>[];
   if (firstToken.minFixed.index > secondCopy.minFixed.index) {
@@ -457,7 +462,18 @@ bool collapseClosest(
   newFirst.duplicateGroup = duplicateGroup;
   newSecond.duplicateGroup = duplicateGroup;
 
-  // todo
+  // We should return edges to the tokens,
+  // because they only collapsed logically,
+  // but they still stay far from each other
+  newFirst = newFirst.copy(
+    start: firstDate.start,
+    end: firstDate.end,
+  );
+  newSecond = newSecond.copy(
+    start: secondDate.start,
+    end: secondDate.end,
+  );
+
   tokens
     ..[firstDateIndex] = newFirst
     ..[secondDateIndex] = newSecond;
@@ -470,26 +486,60 @@ List<DateTimeToken> getFinalTokens(
   ParsingData data,
 ) {
   final regexp = RegExp(r'(([fo]?(@)t(@))|([fo]?(@)))');
-  final tokens = regexp
-      .allMatches(data.pattern)
-      .map((match) => parseFinalToken(
-            fromDatetime,
-            match,
-            data,
-          ))
-      .toList(growable: false);
+  final tokens = <DateTimeToken>[];
+  final duplicates = <int, List<DateTimeTokenCarcase>>{};
+  final matches = regexp.allMatches(data.pattern);
 
-  return tokens;
+  for (final match in matches) {
+    final carcase = parseFinalToken(
+      fromDatetime,
+      match,
+      data,
+    );
+
+    if (carcase.duplicateGroup == null) {
+      tokens.add(carcase.build());
+    } else {
+      final currentDuplicates = duplicates[carcase.duplicateGroup];
+      if (currentDuplicates != null) {
+        duplicates[carcase.duplicateGroup!]!.add(carcase);
+      } else {
+        duplicates[carcase.duplicateGroup!] = [carcase];
+      }
+    }
+  }
+
+  for (final dups in duplicates.values) {
+    final main = dups.reduce(
+      (max, curr) => curr.fixed > max.fixed ? curr : max,
+    );
+    final ranges = dups.map((carcase) => IntRange(
+          start: carcase.start,
+          end: carcase.end,
+        ));
+
+    tokens.add(
+      DateTimeToken(
+        date: main.date!,
+        dateTo: main.dateTo,
+        span: main.span,
+        hasTime: main.hasTime,
+        ranges: ranges.toList(growable: false),
+        type: main.type,
+      ),
+    );
+  }
+
+  return tokens.toList(growable: false);
 }
 
-DateTimeToken parseFinalToken(
+DateTimeTokenCarcase parseFinalToken(
   DateTime fromDatetime,
   Match match,
   ParsingData data,
 ) {
   final tokens = data.tokens;
-  // todo
-  final DateTimeToken token;
+  final DateTimeTokenCarcase carcase;
   if (match.group(3) != null && match.group(4) != null) {
     // if we match a period
     // from date to date
@@ -511,10 +561,10 @@ DateTimeToken parseFinalToken(
 
     final fromToken = convertToken(firstDate, fromDatetime);
     final toToken = convertToken(secondDate, fromDatetime);
-    DateTime dateTo = toToken.date;
+    DateTime dateTo = toToken.date!;
 
     final resolution = secondDate.maxFixed;
-    while (dateTo.isBefore(fromToken.date)) {
+    while (dateTo.isBefore(fromToken.date!)) {
       // ignore: missing_enum_constant_in_switch
       switch (resolution) {
         case FixPeriod.time:
@@ -537,14 +587,15 @@ DateTimeToken parseFinalToken(
       }
     }
 
-    token = DateTimeToken(
-      date: fromToken.date,
-      dateTo: dateTo,
+    carcase = DateTimeTokenCarcase(
       start: fromToken.start,
       end: toToken.end,
-      type: DateTimeTokenType.period,
-      hasTime: fromToken.hasTime || toToken.hasTime,
-    );
+    )
+      ..date = fromToken.date!
+      ..dateTo = dateTo
+      ..type = DateTimeTokenType.period
+      ..hasTime = fromToken.hasTime || toToken.hasTime
+      ..fixed = fromToken.fixed;
   } else {
     // this is single date
     final dateTokenIndex = tokens.indexWhere(
@@ -552,13 +603,16 @@ DateTimeToken parseFinalToken(
       match.start,
     );
     final dateToken = tokens[dateTokenIndex] as DateToken;
-    token = convertToken(dateToken, fromDatetime);
+    carcase = convertToken(dateToken, fromDatetime);
   }
+
+  carcase.start = data.tokens[match.start].start;
+  carcase.end = data.tokens[match.end - 1].end;
 
   // todo start and end
   // todo index to text
 
-  return token;
+  return carcase;
 }
 
 enum DateTimeTokenType {
@@ -568,34 +622,67 @@ enum DateTimeTokenType {
   spanBackward,
 }
 
-// todo duplicates
 @immutable
 class DateTimeToken {
   final DateTime date;
   final DateTime? dateTo;
   final Duration? span;
   final bool hasTime;
-  final int start;
-  final int end;
+  final List<IntRange> ranges;
   final DateTimeTokenType type;
-  final int? duplicateGroup;
 
   const DateTimeToken({
     required this.date,
     this.dateTo,
     this.span,
     this.hasTime = false,
-    required this.start,
-    required this.end,
+    required this.ranges,
     required this.type,
-    this.duplicateGroup,
   });
 
   @override
-  String toString() => 'DateTimeToken($date)';
+  String toString() => 'DateTimeToken($type, $date)';
+
+  @override
+  bool operator ==(Object other) =>
+      other is DateTimeToken &&
+      runtimeType == other.runtimeType &&
+      date == other.date &&
+      dateTo == other.dateTo &&
+      span == other.span &&
+      hasTime == other.hasTime &&
+      ranges == other.ranges &&
+      type == other.type;
+
+  @override
+  int get hashCode => Object.hash(date, dateTo, span, hasTime, ranges, type);
 }
 
-class DateTimeTokenBuilder {
+@immutable
+class IntRange {
+  final int start;
+  final int end;
+
+  const IntRange({
+    required this.start,
+    required this.end,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      other is IntRange &&
+      runtimeType == other.runtimeType &&
+      start == other.start &&
+      end == other.end;
+
+  @override
+  int get hashCode => Object.hash(start, end);
+
+  @override
+  String toString() => 'IntRange($start, $end)';
+}
+
+class DateTimeTokenCarcase {
   DateTime? date;
   DateTime? dateTo;
   Duration? span;
@@ -603,9 +690,10 @@ class DateTimeTokenBuilder {
   int start;
   int end;
   DateTimeTokenType type = DateTimeTokenType.fixed;
+  int fixed = 0;
   int? duplicateGroup;
 
-  DateTimeTokenBuilder({
+  DateTimeTokenCarcase({
     required this.start,
     required this.end,
   });
@@ -616,15 +704,21 @@ class DateTimeTokenBuilder {
       dateTo: dateTo,
       span: span,
       hasTime: hasTime,
-      start: start,
-      end: end,
+      ranges: [IntRange(start: start, end: end)],
       type: type,
-      duplicateGroup: duplicateGroup,
     );
   }
 }
 
-DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
+DateTimeTokenCarcase convertToken(DateToken token, DateTime fromDatetime) {
+  final carcase = DateTimeTokenCarcase(
+    start: token.start,
+    end: token.end,
+  );
+
+  carcase.duplicateGroup = token.duplicateGroup;
+  carcase.fixed = token.fixed;
+
   final minFixed = token.minFixed;
   token.fixDownTo(minFixed);
 
@@ -675,42 +769,35 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
     );
   }
 
-  final builder = DateTimeTokenBuilder(
-    start: token.start,
-    end: token.end,
-  );
-
-  builder.duplicateGroup = token.duplicateGroup;
-
   // ignore: missing_enum_constant_in_switch
   switch (token.maxFixed) {
     case FixPeriod.time:
     case FixPeriod.timeUncertain:
-      builder.type = DateTimeTokenType.fixed;
-      builder.date = token.date;
-      builder.dateTo = token.date;
-      builder.hasTime = true;
+      carcase.type = DateTimeTokenType.fixed;
+      carcase.date = token.date;
+      carcase.dateTo = token.date;
+      carcase.hasTime = true;
       break;
     case FixPeriod.day:
-      builder.type = DateTimeTokenType.fixed;
-      builder.date = token.date;
-      builder.dateTo = token.date!.add(almostOneDay);
+      carcase.type = DateTimeTokenType.fixed;
+      carcase.date = token.date;
+      carcase.dateTo = token.date!.add(almostOneDay);
       break;
     case FixPeriod.week:
       final weekday = token.date!.weekday;
-      builder.type = DateTimeTokenType.period;
-      builder.date = token.date!.add(Duration(days: 1 - weekday));
-      builder.dateTo =
+      carcase.type = DateTimeTokenType.period;
+      carcase.date = token.date!.add(Duration(days: 1 - weekday));
+      carcase.dateTo =
           token.date!.add(Duration(days: 7 - weekday)).add(almostOneDay);
       break;
     case FixPeriod.month:
-      builder.type = DateTimeTokenType.period;
-      builder.date = DateTime(
+      carcase.type = DateTimeTokenType.period;
+      carcase.date = DateTime(
         token.date!.year,
         token.date!.month,
         1,
       );
-      builder.dateTo = DateTime(
+      carcase.dateTo = DateTime(
         token.date!.year,
         token.date!.month,
         getDaysInMonth(token.date!.year, token.date!.month),
@@ -721,13 +808,13 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
       );
       break;
     case FixPeriod.year:
-      builder.type = DateTimeTokenType.period;
-      builder.date = DateTime(
+      carcase.type = DateTimeTokenType.period;
+      carcase.date = DateTime(
         token.date!.year,
         1,
         1,
       );
-      builder.dateTo = DateTime(
+      carcase.dateTo = DateTime(
         token.date!.year,
         12,
         31,
@@ -740,13 +827,13 @@ DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
   }
 
   if (token.spanDirection != 0) {
-    builder.type = token.spanDirection > 0
+    carcase.type = token.spanDirection > 0
         ? DateTimeTokenType.spanForward
         : DateTimeTokenType.spanBackward;
-    builder.span = token.span;
+    carcase.span = token.span;
   }
 
-  return builder.build();
+  return carcase;
 }
 
 const Duration almostOneDay = Duration(

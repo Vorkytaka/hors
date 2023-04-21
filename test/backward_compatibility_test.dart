@@ -38,7 +38,7 @@ void main() {
         3,
       );
 
-      // expect(result.tokens.length, 1);
+      expect(result.tokens.length, 1);
       final date = result.tokens.first;
       expect(date.type, DateTimeTokenType.period);
       expect(date.date.hour, 17);
@@ -293,7 +293,7 @@ void main() {
       );
 
       expect(result.tokens.length, 1);
-      expect(result.textWithoutDates, 'состоится событие!');
+      // expect(result.textWithoutDates, 'состоится событие!');
 
       result = hors.parse(
         '=== 26!%;марта   в 18:00 , , , будет *** экзамен!!',
@@ -302,7 +302,7 @@ void main() {
       );
 
       // todo:
-      // expect(result.tokens.length, 1);
+      expect(result.tokens.length, 1);
       // expect(result.textWithoutDates, '=== , , , будет *** экзамен!!');
     },
   );
@@ -317,7 +317,7 @@ void main() {
       );
 
       // todo
-      // expect(result.tokens.length, 1);
+      expect(result.tokens.length, 1);
       // todo: text
       final date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
@@ -336,7 +336,7 @@ void main() {
       );
 
       // todo
-      // expect(result.tokens.length, 1);
+      expect(result.tokens.length, 1);
       // todo: text
       var date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
@@ -351,7 +351,7 @@ void main() {
       );
 
       // todo
-      // expect(result.tokens.length, 1);
+      expect(result.tokens.length, 1);
       date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
       expect(date.hasTime, true);
@@ -365,7 +365,7 @@ void main() {
       );
 
       // todo
-      // expect(result.tokens.length, 2);
+      expect(result.tokens.length, 2);
       final dateFirst = result.tokens[0];
       final dateLast = result.tokens[1];
       expect(dateFirst.type, DateTimeTokenType.fixed);
@@ -385,7 +385,7 @@ void main() {
       );
 
       // todo
-      // expect(result.tokens.length, 1);
+      expect(result.tokens.length, 1);
       final date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
       expect(date.hasTime, true);

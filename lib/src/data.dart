@@ -94,7 +94,7 @@ class DateToken extends Token {
   DateTime? date;
   Duration? time;
   Duration? span;
-  int fixes = 0;
+  int fixed = 0;
   bool fixDayOfWeek = false;
   int spanDirection = 0;
   int? duplicateGroup;
@@ -111,7 +111,7 @@ class DateToken extends Token {
   String toString() => 'DateToken($start, $end)';
 
   void fix(FixPeriod fix) {
-    fixes = fixes | fix.bit;
+    fixed = fixed | fix.bit;
   }
 
   void fixDownTo(FixPeriod period) {
@@ -125,7 +125,7 @@ class DateToken extends Token {
   }
 
   bool isFixed(FixPeriod period) {
-    return (fixes & period.bit) > 0;
+    return (fixed & period.bit) > 0;
   }
 
   int get maxPeriod {
@@ -166,7 +166,7 @@ class DateToken extends Token {
         ..date = date
         ..time = time
         ..span = span
-        ..fixes = fixes
+        ..fixed = fixed
         ..fixDayOfWeek = fixDayOfWeek
         ..spanDirection = spanDirection
         ..duplicateGroup = duplicateGroup;
