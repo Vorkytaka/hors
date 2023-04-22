@@ -2,7 +2,22 @@ import 'dart:math';
 
 import 'package:meta/meta.dart';
 
-import 'domain.dart';
+import 'hors.dart';
+
+/// TODO: Docs
+enum FixPeriod {
+  none(0),
+  time(1),
+  timeUncertain(2),
+  day(4),
+  week(8),
+  month(16),
+  year(32);
+
+  final int bit;
+
+  const FixPeriod(this.bit);
+}
 
 /// Mutable state for parsing data.
 @internal
@@ -166,4 +181,34 @@ class DateToken extends Token {
         ..fixDayOfWeek = fixDayOfWeek
         ..spanDirection = spanDirection
         ..duplicateGroup = duplicateGroup;
+}
+
+/// TODO: Docs?
+@internal
+class DateTimeTokenCarcase {
+  DateTime? date;
+  DateTime? dateTo;
+  Duration? span;
+  bool hasTime = false;
+  int start;
+  int end;
+  DateTimeTokenType type = DateTimeTokenType.fixed;
+  int fixed = 0;
+  int? duplicateGroup;
+
+  DateTimeTokenCarcase({
+    required this.start,
+    required this.end,
+  });
+
+  DateTimeToken build() {
+    return DateTimeToken(
+      date: date!,
+      dateTo: dateTo,
+      span: span,
+      hasTime: hasTime,
+      ranges: [IntRange(start: start, end: end)],
+      type: type,
+    );
+  }
 }
