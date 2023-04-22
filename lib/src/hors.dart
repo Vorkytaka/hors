@@ -402,7 +402,11 @@ List<DateToken> takeFromAdjacent(
     final token = collapse(firstToken, secondCopy, isLinked);
     newTokens.add(token ?? firstToken);
   } else {
-    final token = collapse(secondCopy, firstToken, isLinked);
+    DateToken? token = collapse(secondCopy, firstToken, isLinked);
+    token = token?.copy(
+      start: firstToken.start,
+      end: firstToken.end,
+    );
     newTokens.add(token ?? firstToken);
   }
 
@@ -410,7 +414,11 @@ List<DateToken> takeFromAdjacent(
     final token = collapse(secondToken, firstCopy, isLinked);
     newTokens.add(token ?? secondToken);
   } else {
-    final token = collapse(firstCopy, secondToken, isLinked);
+    DateToken? token = collapse(firstCopy, secondToken, isLinked);
+    token = token?.copy(
+      start: secondToken.start,
+      end: secondToken.end,
+    );
     newTokens.add(token ?? secondToken);
   }
 
