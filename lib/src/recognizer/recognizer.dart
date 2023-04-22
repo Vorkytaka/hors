@@ -1,15 +1,14 @@
-import 'package:hors/src/recognizer/part_of_day_recognizer.dart';
-import 'package:hors/src/recognizer/relative_date_recognizer.dart';
-import 'package:hors/src/recognizer/time_recognizer.dart';
-import 'package:meta/meta.dart';
-
 import '../data.dart';
+import '../domain.dart';
 import 'dates_period_recognizer.dart';
 import 'day_of_month_recognizer.dart';
 import 'day_of_week_recognizer.dart';
 import 'holiday_recognizer.dart';
 import 'month_recognizer.dart';
+import 'part_of_day_recognizer.dart';
+import 'relative_date_recognizer.dart';
 import 'relative_day_recognizer.dart';
+import 'time_recognizer.dart';
 import 'time_span_recognizer.dart';
 import 'year_recognizer.dart';
 
@@ -47,31 +46,4 @@ abstract class Recognizer {
         regexp,
         (match, tokens) => parser(fromDatetime, match, tokens),
       );
-}
-
-/// TODO: Docs
-@internal
-void parsing(
-  ParsingData data,
-  RegExp regexp,
-  bool Function(Match match, ParsingData data) parser,
-) {
-  // We use reversed data, because our data is mutable,
-  // so, when we parse and mutate this data from the end
-  // then it doesn't affect matches at a start.
-  final matches =
-      regexp.allMatches(data.pattern).toList(growable: false).reversed;
-
-  if (matches.isEmpty) {
-    return;
-  }
-
-  bool updatePattern = false;
-  for (final match in matches) {
-    updatePattern = parser(match, data) || updatePattern;
-  }
-
-  if (updatePattern) {
-    data.updatePattern();
-  }
 }

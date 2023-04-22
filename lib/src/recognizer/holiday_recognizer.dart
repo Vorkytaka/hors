@@ -1,7 +1,7 @@
-import 'package:hors/src/data.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-import 'package:hors/src/token/token_parser.dart';
-import 'package:hors/src/token/token_parsers.dart';
+import '../data.dart';
+import '../token/token_parser.dart';
+import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class HolidayRecognizer extends Recognizer {
   const HolidayRecognizer();

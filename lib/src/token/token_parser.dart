@@ -1,11 +1,13 @@
 import '../data.dart';
 
+/// TODO: Docs
 enum ParserPluralOption {
   all,
   singular,
   plural,
 }
 
+/// TODO: Docs
 abstract class TokenParser {
   const TokenParser({
     required this.metaSymbol,
@@ -17,12 +19,14 @@ abstract class TokenParser {
   /// For example: Y for год.
   final String metaSymbol;
 
+  /// TODO: Docs
   String? parse(
     String rawWord, [
     ParserPluralOption option = ParserPluralOption.all,
   ]);
 }
 
+/// TODO: Docs
 class PluralTokenParser extends TokenParser {
   const PluralTokenParser({
     required this.normalForms,
@@ -79,6 +83,7 @@ class PluralTokenParser extends TokenParser {
   int get hashCode => Object.hash(normalForms, forms, metaSymbol);
 }
 
+/// TODO: Docs
 class OrderPluralTokenParser extends PluralTokenParser {
   const OrderPluralTokenParser({
     required super.normalForms,
@@ -106,6 +111,7 @@ extension OrderPluralTokenParserListUtils on List<OrderPluralTokenParser> {
   }
 }
 
+/// TODO: Docs
 class IntegerTokenParser extends TokenParser {
   const IntegerTokenParser({
     required this.validator,
@@ -146,6 +152,7 @@ class IntegerTokenParser extends TokenParser {
   int get hashCode => Object.hash(metaSymbol, validator);
 }
 
+/// TODO: Docs
 extension PluralTokenParserUtils on PluralTokenParser {
   MaybeDateToken toMaybeDateToken(int start, int end) => MaybeDateToken(
         text: normalForms.first,

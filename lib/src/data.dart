@@ -1,7 +1,8 @@
 import 'dart:math';
 
-import 'package:hors/src/hors.dart';
 import 'package:meta/meta.dart';
+
+import 'domain.dart';
 
 /// Mutable state for parsing data.
 @internal

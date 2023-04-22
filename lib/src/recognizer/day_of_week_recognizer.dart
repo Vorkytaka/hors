@@ -1,6 +1,8 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/data.dart';
-import 'package:hors/src/token/token_parser.dart';
+import '../data.dart';
+import '../domain.dart';
+import '../token/token_parser.dart';
+import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class DayOfWeekRecognizer extends Recognizer {
   const DayOfWeekRecognizer();

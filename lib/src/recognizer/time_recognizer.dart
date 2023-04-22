@@ -1,7 +1,8 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/token/token_parser.dart';
-
 import '../data.dart';
+import '../domain.dart';
+import '../token/token_parser.dart';
+import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class TimeRecognizer extends Recognizer {
   const TimeRecognizer();
@@ -68,11 +69,11 @@ class TimeRecognizer extends Recognizer {
       }
     } else if (match.group(3) != null && hours > 0) {
       switch (match.group(3)) {
-        case "Q": // quarter
+        case 'Q': // quarter
           hours--;
           minutes = 15;
           break;
-        case "H": // half
+        case 'H': // half
           hours--;
           minutes = 30;
           break;
@@ -96,13 +97,13 @@ class TimeRecognizer extends Recognizer {
       }
 
       switch (part) {
-        case "d": // day
+        case 'd': // day
           if (hours <= 4) hours += 12;
           break;
-        case "v": // evening
+        case 'v': // evening
           if (hours <= 11) hours += 12;
           break;
-        case "g": // night
+        case 'g': // night
           if (hours >= 10) hours += 12;
           break;
       }

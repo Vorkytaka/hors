@@ -1,8 +1,8 @@
-import 'package:hors/src/data.dart';
-import 'package:hors/src/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-import 'package:hors/src/token/token_parsers.dart';
-import 'package:hors/src/utils.dart';
+import '../data.dart';
+import '../domain.dart';
+import '../token/token_parsers.dart';
+import '../utils.dart';
+import 'recognizer.dart';
 
 class DatesPeriodRecognizer extends Recognizer {
   const DatesPeriodRecognizer();

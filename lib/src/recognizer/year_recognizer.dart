@@ -1,5 +1,6 @@
 import '../../hors.dart';
 import '../data.dart';
+import '../domain.dart';
 
 class YearRecognizer extends Recognizer {
   const YearRecognizer();
