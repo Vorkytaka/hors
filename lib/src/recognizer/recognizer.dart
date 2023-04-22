@@ -1,6 +1,7 @@
 import 'package:hors/src/recognizer/part_of_day_recognizer.dart';
 import 'package:hors/src/recognizer/relative_date_recognizer.dart';
 import 'package:hors/src/recognizer/time_recognizer.dart';
+import 'package:meta/meta.dart';
 
 import '../data.dart';
 import 'dates_period_recognizer.dart';
@@ -12,6 +13,7 @@ import 'relative_day_recognizer.dart';
 import 'time_span_recognizer.dart';
 import 'year_recognizer.dart';
 
+/// TODO: Docs
 abstract class Recognizer {
   const Recognizer();
 
@@ -29,14 +31,17 @@ abstract class Recognizer {
     PartOfDayRecognizer(),
   ];
 
+  /// TODO: Docs
   RegExp get regexp;
 
+  /// TODO: Docs
   bool parser(
     DateTime fromDatetime,
     Match match,
     ParsingData data,
   );
 
+  /// TODO: Docs
   void recognize(ParsingData data, DateTime fromDatetime) => parsing(
         data,
         regexp,
@@ -44,6 +49,8 @@ abstract class Recognizer {
       );
 }
 
+/// TODO: Docs
+@internal
 void parsing(
   ParsingData data,
   RegExp regexp,

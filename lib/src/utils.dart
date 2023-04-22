@@ -1,18 +1,12 @@
 import 'dart:math';
 
-import 'data.dart';
-
-extension TokenListUtils on List<Token> {
-  // ignore: provide_deprecation_message
-  @deprecated
-  String get toPattern => map((e) => e.symbol).join();
-}
-
+/// Ctrl-C/Ctrl-V from the Flutter
 int getValidDayForMonth(int year, int month, int day) {
   final inMonth = getDaysInMonth(year, month);
   return max(1, min(day, inMonth));
 }
 
+/// Ctrl-C/Ctrl-V from the Flutter
 int getDaysInMonth(int year, int month) {
   if (month == DateTime.february) {
     final bool isLeapYear =

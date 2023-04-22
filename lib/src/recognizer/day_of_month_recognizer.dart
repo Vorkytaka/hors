@@ -37,6 +37,10 @@ class DayOfMonthRecognizer extends Recognizer {
 
     final daysLength = match.group(1)?.length ?? 0;
     final List<DateToken> dates = [];
+
+    final start = tokens[match.start].start;
+    final end = tokens[match.end - 1].end;
+
     for (int i = 0; i < daysLength; i++) {
       final token = tokens[i + match.start];
       if (token.symbol != '0') {
@@ -47,8 +51,8 @@ class DayOfMonthRecognizer extends Recognizer {
       final day = int.parse(token.text);
       final validDay = getValidDayForMonth(fromDatetime.year, month, day);
       final dateToken = DateToken(
-        start: token.start,
-        end: token.start,
+        start: start,
+        end: end,
       );
       dateToken.date = DateTime(
         fromDatetime.year,

@@ -7,13 +7,16 @@ import 'package:meta/meta.dart';
 import 'recognizer/recognizer.dart';
 import 'token/token_parser.dart';
 
+/// todo: docs
 @experimental
 class Hors {
+  /// todo: docs
   @experimental
   const Hors({
     required this.recognizers,
     required this.tokenParsers,
-  }) : assert(tokenParsers.length > 0);
+  })  : assert(recognizers.length > 0),
+        assert(tokenParsers.length > 0);
 
   final List<Recognizer> recognizers;
   final List<TokenParser> tokenParsers;
@@ -21,8 +24,14 @@ class Hors {
   static final Pattern _extraSymbols = RegExp('[^0-9а-яё-]');
   static final Pattern _allowSymbols = RegExp('[а-яА-ЯёЁa-zA-Z0-9-]+');
 
+  /// Parse input [text] for some dates.
+  /// todo: docs
   @experimental
-  HorsResult parse(String text, DateTime fromDatetime, [int closestSteps = 4]) {
+  HorsResult parse(
+    String text, [
+    DateTime? fromDatetime,
+    int closestSteps = 4,
+  ]) {
     ParsingData data = ParsingData(
       sourceText: text,
       tokens: _allowSymbols
@@ -32,7 +41,11 @@ class Hors {
           .toList(),
     );
 
+    // Remove extra zeros, because we don't need them
     _fixZeros(data);
+
+    // If we don't have date, then use current datetime
+    fromDatetime ??= DateTime.now();
 
     for (final recognizer in recognizers) {
       recognizer.recognize(data, fromDatetime);
@@ -44,13 +57,13 @@ class Hors {
     parsing(
       data,
       startPeriodsPattern,
-      collapseDates2,
+      collapseDates,
     );
 
     parsing(
       data,
       endPeriodsPattern,
-      collapseDates2,
+      collapseDates,
     );
 
     parsing(
@@ -65,7 +78,10 @@ class Hors {
       takeFromA,
     );
 
-    if (closestSteps > 1) {
+    if (closestSteps >= 1) {
+      // Case, when two date tokens is related, but stay far from each other
+      // We need to collapse them logically, but not as a string
+      // Example: `Завтра пойду гулять в 11 часов`
       final regexp = RegExp('(@)[^@t]{1,$closestSteps}(?=(@))');
       int lastGroup = 0;
       parsing(
@@ -76,13 +92,16 @@ class Hors {
     }
 
     final tokens = getFinalTokens(fromDatetime, data);
+    final textWithoutTokens = _textWithoutTokens(text, tokens);
 
     return HorsResult(
-      source: text,
+      sourceText: text,
       tokens: tokens,
+      textWithoutTokens: textWithoutTokens,
     );
   }
 
+  /// Transform each match to [TextToken].
   static Token _matchToTextToken(Match match) {
     return TextToken(
       text: match.group(0)!,
@@ -91,6 +110,8 @@ class Hors {
     );
   }
 
+  /// Try to transform each [Token] to [MaybeDateToken].
+  /// If this is not possible, then just return original [token].
   Token _tokenToMaybeDate(Token token) {
     final symbol = _wordToSymbol(token.text);
     if (symbol != null) {
@@ -110,8 +131,9 @@ class Hors {
     return null;
   }
 
-  // todo: do we need it?
-  void _fixZeros(ParsingData data) {
+  /// Remove extra zeros from data and update pattern.
+  /// TODO: Research. Maybe we don't need it?
+  static void _fixZeros(ParsingData data) {
     for (int i = data.tokens.length - 1; i > 0; i--) {
       if (data.tokens[i - 1].text == '0' &&
           int.tryParse(data.tokens[i].text) != null) {
@@ -121,17 +143,50 @@ class Hors {
 
     data.updatePattern();
   }
+
+  /// Return text without tokens start with upper char.
+  /// TODO: Optimize and tests for this function.
+  static String _textWithoutTokens(
+    String text,
+    List<DateTimeToken> tokens,
+  ) {
+    final List<IntRange> ranges = tokens
+        .map((e) => e.ranges)
+        .expand((element) => element)
+        .toList(growable: false);
+
+    for (int i = ranges.length - 1; i >= 0; i--) {
+      final range = ranges[i];
+
+      text = text.substring(0, range.start) +
+          (range.end < text.length ? text.substring(range.end) : '');
+    }
+
+    // Remove extra spaces
+    text = text.trim().replaceAll(RegExp(r'\s{2,}'), ' ');
+
+    // If text is not empty, then start it with upper char
+    if (text.isNotEmpty) {
+      text = text.substring(0, 1).toUpperCase() + text.substring(1);
+    }
+
+    return text;
+  }
 }
 
+/// TODO: docs
 @experimental
 @immutable
 class HorsResult {
-  final String source;
+  final String sourceText;
   final List<DateTimeToken> tokens;
+  final String textWithoutTokens;
 
+  /// TODO: docs
   const HorsResult({
-    required this.source,
+    required this.sourceText,
     required this.tokens,
+    required this.textWithoutTokens,
   });
 
   @override
@@ -139,18 +194,18 @@ class HorsResult {
       identical(this, other) ||
       other is HorsResult &&
           runtimeType == other.runtimeType &&
-          source == other.source &&
-          tokens == other.tokens;
+          sourceText == other.sourceText &&
+          tokens == other.tokens &&
+          textWithoutTokens == other.textWithoutTokens;
 
   @override
-  int get hashCode => Object.hash(source, tokens);
+  int get hashCode => Object.hash(sourceText, tokens, textWithoutTokens);
 
   @override
-  String toString() => 'HorsResult{source: $source, tokens: $tokens}';
-
-// todo: string without tokens
+  String toString() => 'HorsResult{source: $sourceText, tokens: $tokens}';
 }
 
+/// TODO: Docs
 enum FixPeriod {
   none(0),
   time(1),
@@ -165,7 +220,8 @@ enum FixPeriod {
   const FixPeriod(this.bit);
 }
 
-bool collapseDates2(
+@internal
+bool collapseDates(
   Match match,
   ParsingData data,
 ) {
@@ -205,12 +261,14 @@ bool collapseDates2(
   return true;
 }
 
+@internal
 bool canCollapse(DateToken firstToken, DateToken secondToken) {
   if ((firstToken.fixed & secondToken.fixed) != 0) return false;
   return firstToken.spanDirection != -secondToken.spanDirection ||
       firstToken.spanDirection == 0;
 }
 
+@internal
 DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
   if (!canCollapse(baseToken, coverToken)) {
     return null;
@@ -345,6 +403,7 @@ extension on Duration {
       (inSeconds ~/ Duration.secondsPerMinute) % Duration.minutesPerHour;
 }
 
+@internal
 DateTime takeDayOfWeekFrom(
   DateTime current,
   DateTime from, [
@@ -356,6 +415,7 @@ DateTime takeDayOfWeekFrom(
 }
 
 // todo
+@internal
 bool takeFromA(
   Match match,
   ParsingData data,
@@ -386,6 +446,7 @@ bool takeFromA(
 }
 
 // todo: нужны примеры для теста
+@internal
 List<DateToken> takeFromAdjacent(
   DateToken firstToken,
   DateToken secondToken,
@@ -425,6 +486,7 @@ List<DateToken> takeFromAdjacent(
   return newTokens.toList(growable: false);
 }
 
+@internal
 bool collapseClosest(
   Match match,
   ParsingData data,
@@ -489,6 +551,7 @@ bool collapseClosest(
   return true;
 }
 
+@internal
 List<DateTimeToken> getFinalTokens(
   DateTime fromDatetime,
   ParsingData data,
@@ -541,6 +604,7 @@ List<DateTimeToken> getFinalTokens(
   return tokens.toList(growable: false);
 }
 
+@internal
 DateTimeTokenCarcase parseFinalToken(
   DateTime fromDatetime,
   Match match,
@@ -630,7 +694,9 @@ enum DateTimeTokenType {
   spanBackward,
 }
 
+/// TODO: Docs
 @immutable
+@experimental
 class DateTimeToken {
   final DateTime date;
   final DateTime? dateTo;
@@ -641,9 +707,9 @@ class DateTimeToken {
 
   const DateTimeToken({
     required this.date,
-    this.dateTo,
-    this.span,
-    this.hasTime = false,
+    required this.dateTo,
+    required this.span,
+    required this.hasTime,
     required this.ranges,
     required this.type,
   });
@@ -666,6 +732,7 @@ class DateTimeToken {
   int get hashCode => Object.hash(date, dateTo, span, hasTime, ranges, type);
 }
 
+/// TODO: Docs
 @immutable
 class IntRange {
   final int start;
@@ -690,6 +757,8 @@ class IntRange {
   String toString() => 'IntRange($start, $end)';
 }
 
+/// TODO: Docs?
+@internal
 class DateTimeTokenCarcase {
   DateTime? date;
   DateTime? dateTo;
@@ -718,6 +787,7 @@ class DateTimeTokenCarcase {
   }
 }
 
+@internal
 DateTimeTokenCarcase convertToken(DateToken token, DateTime fromDatetime) {
   final carcase = DateTimeTokenCarcase(
     start: token.start,

@@ -24,6 +24,7 @@ class ParsingData {
 /// Everything starts with [TextToken].
 /// After that, token can be transform for [MaybeDateToken].
 /// Then, it can be transform to the [DateToken].
+@internal
 abstract class Token {
   /// Text of this token
   final String text;
@@ -51,16 +52,9 @@ abstract class Token {
       symbol: symbol,
     );
   }
-
-// DateToken toDateToken(AbstractDate date) {
-//   return DateToken(
-//     start: start,
-//     end: end,
-//     date: date,
-//   );
-// }
 }
 
+@internal
 class TextToken extends Token {
   const TextToken({
     required super.text,
@@ -90,6 +84,7 @@ class MaybeDateToken extends Token {
   String toString() => 'MaybeDateToken($text, $start, $end, $symbol)';
 }
 
+@internal
 class DateToken extends Token {
   DateTime? date;
   Duration? time;

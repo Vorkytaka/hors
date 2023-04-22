@@ -293,7 +293,7 @@ void main() {
       );
 
       expect(result.tokens.length, 1);
-      // expect(result.textWithoutDates, 'состоится событие!');
+      expect(result.textWithoutTokens, 'состоится событие!');
 
       result = hors.parse(
         '=== 26!%;марта   в 18:00 , , , будет *** экзамен!!',
@@ -301,9 +301,8 @@ void main() {
         3,
       );
 
-      // todo:
       expect(result.tokens.length, 1);
-      // expect(result.textWithoutDates, '=== , , , будет *** экзамен!!');
+      expect(result.textWithoutTokens, '=== , , , будет *** экзамен!!');
     },
   );
 
@@ -316,7 +315,6 @@ void main() {
         3,
       );
 
-      // todo
       expect(result.tokens.length, 1);
       // todo: text
       final date = result.tokens.first;
@@ -335,7 +333,6 @@ void main() {
         3,
       );
 
-      // todo
       expect(result.tokens.length, 1);
       // todo: text
       var date = result.tokens.first;
@@ -350,7 +347,6 @@ void main() {
         5,
       );
 
-      // todo
       expect(result.tokens.length, 1);
       date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
@@ -364,7 +360,6 @@ void main() {
         2,
       );
 
-      // todo
       expect(result.tokens.length, 2);
       final dateFirst = result.tokens[0];
       final dateLast = result.tokens[1];
@@ -384,7 +379,6 @@ void main() {
         DateTime(2019, 10, 8),
       );
 
-      // todo
       expect(result.tokens.length, 1);
       final date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
