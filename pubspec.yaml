@@ -1,13 +1,13 @@
 name: hors
-description: A starting point for Dart libraries or applications.
-version: 0.0.1
+description: A simple Dart package to extract date and time from Russian texts.
+version: 0.9.0
 # repository: –
 
 environment:
-  sdk: '>=2.19.2 <3.0.0'
+  sdk: '>=2.17.2 <3.0.0'
 
 dependencies:
-  meta: ^1.9.1
+  meta: ^1.3.0
 
 dev_dependencies:
   lints: ^2.0.1

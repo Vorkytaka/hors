@@ -5,7 +5,7 @@ import 'domain.dart';
 import 'recognizer/recognizer.dart';
 import 'token/token_parser.dart';
 
-/// todo: docs
+/// A simple class to extract date and time from natural speech.
 @experimental
 class Hors {
   /// todo: docs
@@ -22,8 +22,13 @@ class Hors {
   static final Pattern _extraSymbols = RegExp('[^0-9а-яё-]');
   static final Pattern _allowSymbols = RegExp('[а-яА-ЯёЁa-zA-Z0-9-]+');
 
-  /// Parse input [text] for some dates.
-  /// todo: docs
+  /// Parse input for possible dates.
+  ///
+  /// Optional [fromDatetime] the date relative to which the intervals are to be measured.
+  /// If it's null, then `DateTime.now()` will be used.
+  ///
+  /// [closestSteps] the maximum number of words between two dates at which will try to combine
+  /// these dates into one, if possible. Default to 4.
   @experimental
   HorsResult parse(
     String text, [
@@ -172,7 +177,11 @@ class Hors {
   }
 }
 
-/// TODO: docs
+/// Result of parsing from [Hors.parse].
+///
+/// [sourceText] is just initial text, that was parsed.
+/// [tokens] is collection of all parsed dates.
+/// [textWithoutTokens] is initial text, but without date tokens, and also starts with capital letter.
 @experimental
 @immutable
 class HorsResult {
@@ -231,7 +240,33 @@ class DateTimeToken {
   });
 
   @override
-  String toString() => 'DateTimeToken($type, $date)';
+  String toString() {
+    final sb = StringBuffer('DateTimeToken, ');
+
+    final typeName = type.toString().split('.').last;
+    sb.write(typeName);
+    sb.write(':\n\t');
+
+    switch (type) {
+      case DateTimeTokenType.fixed:
+        sb.write(date);
+        break;
+      case DateTimeTokenType.period:
+        sb.write('From:\t');
+        sb.write(date);
+        sb.write('\n\tTo:\t\t');
+        sb.write(dateTo);
+        break;
+      case DateTimeTokenType.spanForward:
+      case DateTimeTokenType.spanBackward:
+        sb.write('Date:\t');
+        sb.write(date);
+        sb.write('\n\tSpan:\t');
+        sb.write(span);
+        break;
+    }
+    return sb.toString();
+  }
 
   @override
   bool operator ==(Object other) =>

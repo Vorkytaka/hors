@@ -951,7 +951,7 @@ class TokenParsers {
     sunday,
   ];
 
-  static List<TokenParser> all = [
+  static final List<TokenParser> all = [
     after,
     afterPostfix,
     previousPostfix,
