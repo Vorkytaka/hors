@@ -171,9 +171,9 @@ DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
       baseToken.spanDirection != 0 &&
       coverToken.spanDirection == 0) {
     if (baseToken.spanDirection > 0) {
-      newToken.span = baseToken.time! + baseToken.time!;
+      newToken.span = newToken.span! + newToken.time!;
     } else {
-      newToken.span = baseToken.time! - baseToken.time!;
+      newToken.span = newToken.span! - newToken.time!;
     }
   }
 
