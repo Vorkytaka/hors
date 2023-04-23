@@ -9,7 +9,7 @@ Currently works __only__ with russian language.
 
 To use this package you need to create a `Hors` object with list of `TokenParser` and list
 of `Recognizer`.
-Out of the box there is rich collection of both types.
+Out of the box there is rich collection of both types, see `Recognizer.all` and `TokenParsers.all`.
 
 Base example looks like this:
 
@@ -33,3 +33,6 @@ final result = hors.parse('Завтра состоится событие в 11 
 ### Limitations
 
 - All numbers must be a numbers, not in words (`11 ноября`, not `одинадцатого ноября`).
+    - We have plans to fix this
+- Some recognizers is relate with each-other, so you should know in which order they used or you can
+  get unpredictable results.

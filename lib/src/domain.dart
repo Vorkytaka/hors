@@ -6,6 +6,7 @@ import 'data.dart';
 import 'hors.dart';
 import 'utils.dart';
 
+/// Try to collapse two dates into one.
 @internal
 bool collapseDates(
   Match match,
@@ -200,9 +201,11 @@ DateTime takeDayOfWeekFrom(
   return current.add(Duration(days: diff));
 }
 
-// todo
+/// Try to combine two dates with each other, without collapse them into single one.
+///
+/// See [collapseDates] for combine two dates into single.
 @internal
-bool takeFromA(
+bool fillAdjacentDates(
   Match match,
   ParsingData data,
 ) {
@@ -231,7 +234,9 @@ bool takeFromA(
   return true;
 }
 
-// todo: нужны примеры для теста
+/// Take adjacent tokens, and try to combine their data to each other.
+///
+/// Return list of two new combined tokens.
 @internal
 List<DateToken> takeFromAdjacent(
   DateToken firstToken,
@@ -272,8 +277,12 @@ List<DateToken> takeFromAdjacent(
   return newTokens.toList(growable: false);
 }
 
+/// Try to combine dates, that stay far from each other, but can be combined logically.
+///
+/// [group] is used for indicate if two dates was combined into one group.
+/// See [DateToken.duplicateGroup].
 @internal
-bool collapseClosest(
+bool collapseOnDistance(
   Match match,
   ParsingData data,
   int group,
@@ -633,4 +642,59 @@ void parsing(
   if (updatePattern) {
     data.updatePattern();
   }
+}
+
+/// Remove extra zeros from data and update pattern.
+/// TODO: Research. Maybe we don't need it?
+@internal
+void fixZeros(ParsingData data) {
+  for (int i = data.tokens.length - 1; i > 0; i--) {
+    if (data.tokens[i - 1].text == '0' &&
+        int.tryParse(data.tokens[i].text) != null) {
+      data.tokens.removeAt(i - 1);
+    }
+  }
+
+  data.updatePattern();
+}
+
+/// Return text without tokens start with upper char.
+/// TODO: Optimize and tests for this function.
+@internal
+String generateTextWithoutTokens(
+  String text,
+  List<DateTimeToken> tokens,
+) {
+  final List<IntRange> ranges = tokens
+      .map((e) => e.ranges)
+      .expand((element) => element)
+      .toList(growable: false);
+
+  for (int i = ranges.length - 1; i >= 0; i--) {
+    final range = ranges[i];
+
+    text = text.substring(0, range.start) +
+        (range.end < text.length ? text.substring(range.end) : '');
+  }
+
+// Remove extra spaces
+  text = text.trim().replaceAll(RegExp(r'\s{2,}'), ' ');
+
+// If text is not empty, then start it with upper char
+  if (text.isNotEmpty) {
+    text = text.substring(0, 1).toUpperCase() + text.substring(1);
+  }
+
+  return text;
+}
+
+/// Transform each [Match] to a [TextToken].
+@internal
+@pragma('vm:prefer-inline')
+Token matchToTextToken(Match match) {
+  return TextToken(
+    text: match.group(0)!,
+    start: match.start,
+    end: match.end,
+  );
 }

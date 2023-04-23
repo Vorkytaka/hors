@@ -112,12 +112,10 @@ void main() {
       expect(firstDate.type, DateTimeTokenType.fixed);
       expect(firstDate.date.hour, 2);
 
-      // todo: wrong date?
       final secondDate = result.tokens[1];
       expect(secondDate.type, DateTimeTokenType.fixed);
       expect(secondDate.date.hour, 3);
 
-      // todo: wrong date?
       final thirdDate = result.tokens[2];
       expect(thirdDate.type, DateTimeTokenType.fixed);
       expect(thirdDate.date.hour, 0);
@@ -293,7 +291,7 @@ void main() {
       );
 
       expect(result.tokens.length, 1);
-      expect(result.textWithoutTokens, 'состоится событие!');
+      expect(result.textWithoutTokens, 'Состоится событие!');
 
       result = hors.parse(
         '=== 26!%;марта   в 18:00 , , , будет *** экзамен!!',
@@ -316,7 +314,7 @@ void main() {
       );
 
       expect(result.tokens.length, 1);
-      // todo: text
+      expect(result.textWithoutTokens, 'Будет событие и будет оно');
       final date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
       expect(date.date.day, 18);
@@ -334,7 +332,7 @@ void main() {
       );
 
       expect(result.tokens.length, 1);
-      // todo: text
+      expect(result.textWithoutTokens, 'Будет событие');
       var date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
       expect(date.hasTime, true);

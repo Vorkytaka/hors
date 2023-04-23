@@ -6,9 +6,21 @@ import 'recognizer/recognizer.dart';
 import 'token/token_parser.dart';
 
 /// A simple class to extract date and time from natural speech.
+///
+/// __Currently only works with russian language__
+///
+/// In many cases all you need to do it's initialize [Hors] with all parsers and recognizer.
+/// ```
+/// final hors = Hors(
+///   recognizers: Recognizer.all,
+///   tokenParsers: TokenParsers.all,
+/// );
+///
+/// final result = hors.parse('Завтра состоится событие');
+/// ```
 @experimental
 class Hors {
-  /// todo: docs
+  /// Create a new instance of [Hors] with specific lists of recognizers and parsers.
   @experimental
   const Hors({
     required this.recognizers,
@@ -16,7 +28,10 @@ class Hors {
   })  : assert(recognizers.length > 0),
         assert(tokenParsers.length > 0);
 
+  /// List of [Recognizer] that will be used in this instance of [Hors].
   final List<Recognizer> recognizers;
+
+  /// List of [TokenParser] that will be used in this instance of [Hors].
   final List<TokenParser> tokenParsers;
 
   static final Pattern _extraSymbols = RegExp('[^0-9а-яё-]');
@@ -39,13 +54,13 @@ class Hors {
       sourceText: text,
       tokens: _allowSymbols
           .allMatches(text.toLowerCase())
-          .map(_matchToTextToken)
+          .map(matchToTextToken)
           .map(_tokenToMaybeDate)
           .toList(),
     );
 
     // Remove extra zeros, because we don't need them
-    _fixZeros(data);
+    fixZeros(data);
 
     // If we don't have date, then use current datetime
     fromDatetime ??= DateTime.now();
@@ -57,45 +72,53 @@ class Hors {
     final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))');
     final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)(?=((N?[fot]?)(@)))');
 
+    // Try to collapse standing side by side [DateToken] into single one.
     parsing(
       data,
       startPeriodsPattern,
       collapseDates,
     );
 
+    // Try to collapse standing side by side [DateToken] into single one.
     parsing(
       data,
       endPeriodsPattern,
       collapseDates,
     );
 
+    // Try to combine standing side by side [DateToken].
     parsing(
       data,
       endPeriodsPattern,
-      takeFromA,
+      fillAdjacentDates,
     );
 
+    // Try to combine standing side by side [DateToken].
     parsing(
       data,
       startPeriodsPattern,
-      takeFromA,
+      fillAdjacentDates,
     );
 
     if (closestSteps >= 1) {
       // Case, when two date tokens is related, but stay far from each other
       // We need to collapse them logically, but not as a string
+      //
       // Example: `Завтра пойду гулять в 11 часов`
       final regexp = RegExp('(@)[^@t]{1,$closestSteps}(?=(@))');
+
+      // When we combine tokens like this, then we need to indicate them.
+      // This is used for it and increment for each group.
       int lastGroup = 0;
       parsing(
         data,
         regexp,
-        (match, data) => collapseClosest(match, data, lastGroup++),
+        (match, data) => collapseOnDistance(match, data, lastGroup++),
       );
     }
 
     final tokens = getFinalTokens(fromDatetime, data);
-    final textWithoutTokens = _textWithoutTokens(text, tokens);
+    final textWithoutTokens = generateTextWithoutTokens(text, tokens);
 
     return HorsResult(
       sourceText: text,
@@ -104,16 +127,7 @@ class Hors {
     );
   }
 
-  /// Transform each match to [TextToken].
-  static Token _matchToTextToken(Match match) {
-    return TextToken(
-      text: match.group(0)!,
-      start: match.start,
-      end: match.end,
-    );
-  }
-
-  /// Try to transform each [Token] to [MaybeDateToken].
+  /// Try to transform [Token] to [MaybeDateToken].
   /// If this is not possible, then just return original [token].
   Token _tokenToMaybeDate(Token token) {
     final symbol = _wordToSymbol(token.text);
@@ -123,6 +137,9 @@ class Hors {
     return token;
   }
 
+  /// Parse [word] and try to found symbol for that word.
+  /// Return null if no symbol found.
+  // TODO: Maybe should optimize this code with hashes.
   String? _wordToSymbol(String word) {
     final rawWord = word.replaceAll(_extraSymbols, '').toLowerCase().trim();
 
@@ -132,48 +149,6 @@ class Hors {
     }
 
     return null;
-  }
-
-  /// Remove extra zeros from data and update pattern.
-  /// TODO: Research. Maybe we don't need it?
-  static void _fixZeros(ParsingData data) {
-    for (int i = data.tokens.length - 1; i > 0; i--) {
-      if (data.tokens[i - 1].text == '0' &&
-          int.tryParse(data.tokens[i].text) != null) {
-        data.tokens.removeAt(i - 1);
-      }
-    }
-
-    data.updatePattern();
-  }
-
-  /// Return text without tokens start with upper char.
-  /// TODO: Optimize and tests for this function.
-  static String _textWithoutTokens(
-    String text,
-    List<DateTimeToken> tokens,
-  ) {
-    final List<IntRange> ranges = tokens
-        .map((e) => e.ranges)
-        .expand((element) => element)
-        .toList(growable: false);
-
-    for (int i = ranges.length - 1; i >= 0; i--) {
-      final range = ranges[i];
-
-      text = text.substring(0, range.start) +
-          (range.end < text.length ? text.substring(range.end) : '');
-    }
-
-    // Remove extra spaces
-    text = text.trim().replaceAll(RegExp(r'\s{2,}'), ' ');
-
-    // If text is not empty, then start it with upper char
-    if (text.isNotEmpty) {
-      text = text.substring(0, 1).toUpperCase() + text.substring(1);
-    }
-
-    return text;
   }
 }
 
@@ -185,11 +160,18 @@ class Hors {
 @experimental
 @immutable
 class HorsResult {
+  /// Initial text that was parsed.
   final String sourceText;
+
+  /// List of [DateTimeToken] that was found in [sourceText].
+  ///
+  /// Can be empty.
   final List<DateTimeToken> tokens;
+
+  /// Text without dates.
   final String textWithoutTokens;
 
-  /// TODO: docs
+  /// Used for create hors results.
   const HorsResult({
     required this.sourceText,
     required this.tokens,
@@ -212,22 +194,70 @@ class HorsResult {
   String toString() => 'HorsResult{source: $sourceText, tokens: $tokens}';
 }
 
+/// Type of founded date token.
+@experimental
 enum DateTimeTokenType {
+  /// Fixed date and (maybe) time.
   fixed,
+
+  /// Period from [DateTimeToken.date] to [DateTimeToken.dateTo].
+  ///
+  /// [DateTimeToken.dateTo] is not null in this case.
   period,
+
+  /// Span forward.
+  ///
+  /// [DateTimeToken.date] is show datetime of event.
+  /// [DateTimeToken.span] is not null and show duration from current datetime to event.
   spanForward,
+
+  /// Span backward.
+  ///
+  /// [DateTimeToken.date] is show datetime of event.
+  /// [DateTimeToken.span] is not null and show duration from current datetime to event.
   spanBackward,
 }
 
-/// TODO: Docs
+/// Data class with everything over one parsed date.
 @immutable
 @experimental
 class DateTimeToken {
+  /// Main datetime field that was parsed.
+  ///
+  /// When [type] is [DateTimeTokenType.fixed], then this field is just datetime of parsed string.
+  /// When [type] is [DateTimeTokenType.period], then this field is start point in time of the period.
+  /// When [type] is either [DateTimeTokenType.spanForward] or [DateTimeTokenType.spanBackward], then this field is datetime of parsed string.
+  ///
+  /// If field [hasTime] is true, then time in this field specify exactly time.
+  /// Otherwise time fields can be ignored.
+  ///
+  /// Every other field in this class it's works around this one.
   final DateTime date;
+
+  /// Datetime that indicates end of period.
+  ///
+  /// Not null in case, when [type] of this token is [DateTimeTokenType.period].
+  /// In any other case it's null.
+  ///
+  /// If field [hasTime] is true, then time in this field specify exactly time.
+  /// Otherwise time fields can be ignored.
   final DateTime? dateTo;
+
+  /// Duration of span, that was used for [date].
+  ///
+  /// Not null in case, when [type] either is [DateTimeTokenType.spanForward] or [DateTimeTokenType.spanBackward].
+  /// In any other case it's null.
   final Duration? span;
+
+  /// Indicate if in any [date] or/and [dateTo] is specify time.
   final bool hasTime;
+
+  /// Ranges of this [DateTimeToken] in input source text.
   final List<IntRange> ranges;
+
+  /// Type of this token.
+  ///
+  /// See [DateTimeTokenType] for more info.
   final DateTimeTokenType type;
 
   const DateTimeToken({
@@ -283,7 +313,7 @@ class DateTimeToken {
   int get hashCode => Object.hash(date, dateTo, span, hasTime, ranges, type);
 }
 
-/// TODO: Docs
+/// Range of intergers.
 @immutable
 class IntRange {
   final int start;

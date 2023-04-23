@@ -4,7 +4,8 @@ import 'package:meta/meta.dart';
 
 import 'hors.dart';
 
-/// TODO: Docs
+/// Fixes for date and time in parsed string.
+@internal
 enum FixPeriod {
   none(0),
   time(1),
@@ -14,6 +15,9 @@ enum FixPeriod {
   month(16),
   year(32);
 
+  /// Bit of current fix period.
+  ///
+  /// Used for bitwise operations, to store fixes in one integer.
   final int bit;
 
   const FixPeriod(this.bit);
@@ -183,7 +187,6 @@ class DateToken extends Token {
         ..duplicateGroup = duplicateGroup;
 }
 
-/// TODO: Docs?
 @internal
 class DateTimeTokenCarcase {
   DateTime? date;
@@ -207,7 +210,7 @@ class DateTimeTokenCarcase {
       dateTo: dateTo,
       span: span,
       hasTime: hasTime,
-      ranges: [IntRange(start: start, end: end)],
+      ranges: List.unmodifiable([IntRange(start: start, end: end)]),
       type: type,
     );
   }
