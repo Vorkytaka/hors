@@ -57,3 +57,14 @@ final result = hors.parse('Завтра состоится событие в 11 
 	From:	2023-04-25 00:00:00.000
 	To:		2023-04-28 00:00:00.000
 ```
+
+### Special thanks
+
+[Original library](https://github.com/DenisNP/Hors) is created
+by [DenisNP](https://github.com/DenisNP) with C#.
+This is port of library to the Dart language.
+For now this library is backward compatible with the original one.
+But this implementation written a little bit different.
+
+For some info how this library works you can
+read [this article](https://habr.com/ru/articles/471204/) (ru).
