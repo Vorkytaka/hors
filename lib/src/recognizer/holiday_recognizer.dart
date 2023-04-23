@@ -1,7 +1,7 @@
-import 'package:hors/src/data.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-import 'package:hors/src/token/token_parser.dart';
-import 'package:hors/src/token/token_parsers.dart';
+import '../data.dart';
+import '../token/token_parser.dart';
+import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class HolidayRecognizer extends Recognizer {
   const HolidayRecognizer();
@@ -10,26 +10,38 @@ class HolidayRecognizer extends Recognizer {
   RegExp get regexp => RegExp(r'W');
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final token = tokens.first;
+    final tokens = data.tokens;
+    final token = tokens[match.start];
 
     final symbol = TokenParsers.holiday.parse(
       token.text,
       ParserPluralOption.singular,
     );
 
+    final List<Token> newTokens;
     if (symbol != null) {
-      return [TokenParsers.saturday.toMaybeDateToken(token.start, token.end)];
+      newTokens = [
+        TokenParsers.saturday.toMaybeDateToken(token.start, token.end),
+      ];
     } else {
-      return [
+      newTokens = [
         TokenParsers.saturday.toMaybeDateToken(token.start, token.end),
         TokenParsers.timeTo.toMaybeDateToken(token.start, token.end),
         TokenParsers.sunday.toMaybeDateToken(token.start, token.end),
       ];
     }
+
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      newTokens,
+    );
+
+    return true;
   }
 }

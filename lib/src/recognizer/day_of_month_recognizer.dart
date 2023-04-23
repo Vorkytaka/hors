@@ -1,9 +1,8 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-import 'package:hors/src/utils.dart';
-
 import '../data.dart';
+import '../domain.dart';
 import '../token/token_parsers.dart';
+import '../utils.dart';
+import 'recognizer.dart';
 
 class DayOfMonthRecognizer extends Recognizer {
   const DayOfMonthRecognizer();
@@ -13,15 +12,20 @@ class DayOfMonthRecognizer extends Recognizer {
       RegExp(r'((0N?)+)([M#])'); // 24, 25, 26... и 27 января/числа
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     bool monthFixed = false;
 
-    final monthToken = tokens
-        .firstWhere((token) => token.symbol == 'M' || token.symbol == '#');
+    final monthTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'M' || token.symbol == '#',
+      match.start,
+    );
+    final monthToken = tokens[monthTokenIndex];
     int month = fromDatetime.month;
     for (final parser in TokenParsers.months) {
       final symbol = parser.parse(monthToken.text);
@@ -34,8 +38,12 @@ class DayOfMonthRecognizer extends Recognizer {
 
     final daysLength = match.group(1)?.length ?? 0;
     final List<DateToken> dates = [];
+
+    final start = tokens[match.start].start;
+    final end = tokens[match.end - 1].end;
+
     for (int i = 0; i < daysLength; i++) {
-      final token = tokens[i];
+      final token = tokens[i + match.start];
       if (token.symbol != '0') {
         // that's not a number
         continue;
@@ -43,22 +51,30 @@ class DayOfMonthRecognizer extends Recognizer {
 
       final day = int.parse(token.text);
       final validDay = getValidDayForMonth(fromDatetime.year, month, day);
-      final dateBuilder = AbstractDate.builder(
-        date: DateTime(
-          fromDatetime.year,
-          month,
-          validDay,
-        ),
+      final dateToken = DateToken(
+        start: start,
+        end: end,
       );
-      dateBuilder.fix(FixPeriod.week);
-      dateBuilder.fix(FixPeriod.day);
-      if (monthFixed) dateBuilder.fix(FixPeriod.month);
+      dateToken.date = DateTime(
+        fromDatetime.year,
+        month,
+        validDay,
+      );
+      dateToken.fix(FixPeriod.week);
+      dateToken.fix(FixPeriod.day);
+      if (monthFixed) dateToken.fix(FixPeriod.month);
 
       // todo: maybe next month!
 
-      dates.add(token.toDateToken(dateBuilder.build()));
+      dates.add(dateToken);
     }
 
-    return dates;
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      dates,
+    );
+
+    return true;
   }
 }

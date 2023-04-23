@@ -1,7 +1,6 @@
-import 'package:hors/src/recognizer/recognizer.dart';
-
 import '../../hors.dart';
 import '../data.dart';
+import '../domain.dart';
 
 class RelativeDateRecognizer extends Recognizer {
   const RelativeDateRecognizer();
@@ -11,11 +10,13 @@ class RelativeDateRecognizer extends Recognizer {
       r'([usxy])([Ymwd])'); // [в/на] следующей/этой/предыдущей год/месяц/неделе/день
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final int direction;
     switch (match.group(1)) {
       case 'y':
@@ -30,34 +31,37 @@ class RelativeDateRecognizer extends Recognizer {
         break;
     }
 
-    final builder = AbstractDate.builder();
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
     switch (match.group(2)) {
       case 'Y':
-        builder.date =
+        dateToken.date =
             fromDatetime.copyWith(year: fromDatetime.year + direction);
-        builder.fix(FixPeriod.year);
+        dateToken.fix(FixPeriod.year);
         break;
       case 'm':
-        builder.date =
+        dateToken.date =
             fromDatetime.copyWith(month: fromDatetime.month + direction);
-        builder.fixDownTo(FixPeriod.month);
+        dateToken.fixDownTo(FixPeriod.month);
         break;
       case 'w':
-        builder.date = fromDatetime.add(Duration(days: direction * 7));
-        builder.fixDownTo(FixPeriod.week);
+        dateToken.date = fromDatetime.add(Duration(days: direction * 7));
+        dateToken.fixDownTo(FixPeriod.week);
         break;
       case 'd':
-        builder.date = fromDatetime.add(Duration(days: direction));
-        builder.fixDownTo(FixPeriod.day);
+        dateToken.date = fromDatetime.add(Duration(days: direction));
+        dateToken.fixDownTo(FixPeriod.day);
         break;
     }
 
-    return [
-      DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
-        date: builder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [dateToken],
+    );
+
+    return true;
   }
 }

@@ -1,21 +1,28 @@
-import 'package:hors/src/recognizer/part_of_day_recognizer.dart';
-import 'package:hors/src/recognizer/relative_date_recognizer.dart';
-import 'package:hors/src/recognizer/time_recognizer.dart';
+import 'package:meta/meta.dart';
 
 import '../data.dart';
-import '../utils.dart';
+import '../domain.dart';
 import 'dates_period_recognizer.dart';
 import 'day_of_month_recognizer.dart';
 import 'day_of_week_recognizer.dart';
 import 'holiday_recognizer.dart';
 import 'month_recognizer.dart';
+import 'part_of_day_recognizer.dart';
+import 'relative_date_recognizer.dart';
 import 'relative_day_recognizer.dart';
+import 'time_recognizer.dart';
 import 'time_span_recognizer.dart';
 import 'year_recognizer.dart';
 
+/// Base class for recognize some date, time or spans from [ParsingData].
+///
+/// In many cases all you need to do is to use [Recognizer.all].
+/// But you free to use any recognizers, or even create your own.
+@experimental
 abstract class Recognizer {
   const Recognizer();
 
+  /// List of all default recognizer.
   static const List<Recognizer> all = [
     HolidayRecognizer(),
     DatesPeriodRecognizer(),
@@ -30,74 +37,29 @@ abstract class Recognizer {
     PartOfDayRecognizer(),
   ];
 
+  /// Regular expression that used to found possible datetime in [ParsingData.pattern].
   RegExp get regexp;
 
-  List<Token>? parser(
+  /// Method that get match of [regexp] from [ParsingData.pattern], and try to parse as real date data.
+  ///
+  /// Should return [true] if parsing was successful, [false] otherwise.
+  /// This method is mutate [ParsingData], so, be careful with data.
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   );
 
-  ParsingData recognize(ParsingData data, DateTime fromDatetime) => parsing(
+  /// Main method that search and parse [ParsingData] for dates.
+  ///
+  /// When it's found some match, it goes through the matches in reverse order,
+  /// and try to parse it with [parser].
+  ///
+  /// We use reverse order, because of mutable [ParsingData], so
+  /// when we mutate data from the end, then matches at the start is not affected.
+  void recognize(ParsingData data, DateTime fromDatetime) => parsing(
         data,
         regexp,
         (match, tokens) => parser(fromDatetime, match, tokens),
       );
-}
-
-ParsingData parsing(
-  ParsingData data,
-  RegExp regexp,
-  List<Token>? Function(Match match, List<Token> tokens) parser,
-) {
-  final newTokens = matchAll(
-    regexp,
-    data.tokens,
-    parser,
-  );
-
-  if (newTokens == null) {
-    return data;
-  }
-
-  return ParsingData(
-    sourceText: data.sourceText,
-    tokens: newTokens,
-  );
-}
-
-// todo: reverse?
-List<Token>? matchAll(
-  RegExp regexp,
-  List<Token> tokens,
-  List<Token>? Function(Match match, List<Token> tokens) parser,
-) {
-  final pattern = tokens.toPattern;
-  final matches = regexp.allMatches(pattern).iterator;
-
-  if (!matches.moveNext()) {
-    return null;
-  }
-
-  final List<Token> newTokens = [];
-  int lastStart = 0;
-  do {
-    Match match = matches.current;
-    newTokens.addAll(tokens.sublist(lastStart, match.start));
-
-    final subtokens = tokens.sublist(match.start, match.end);
-    final parsed = parser(match, subtokens);
-    if (parsed != null) {
-      newTokens.addAll(parsed);
-    } else {
-      newTokens.addAll(subtokens);
-    }
-    lastStart = match.end;
-  } while (lastStart < pattern.length && matches.moveNext());
-
-  if (lastStart < pattern.length) {
-    newTokens.addAll(tokens.sublist(lastStart));
-  }
-
-  return newTokens;
 }

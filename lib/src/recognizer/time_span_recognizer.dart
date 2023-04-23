@@ -1,6 +1,5 @@
-import 'package:hors/hors.dart';
-
 import '../data.dart';
+import '../domain.dart';
 import 'recognizer.dart';
 
 class TimeSpanRecognizer extends Recognizer {
@@ -11,15 +10,17 @@ class TimeSpanRecognizer extends Recognizer {
       r'(i)?((0?[Ymwdhe]N?)+)([bl])?'); // (через) год и месяц и 2 дня 4 часа 10 минут (спустя/назад)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final prefix = match.group(1);
     final postfix = match.group(4);
     if (!((prefix != null) ^ (postfix != null))) {
-      return null;
+      return false;
     }
 
     final int direction;
@@ -29,8 +30,11 @@ class TimeSpanRecognizer extends Recognizer {
       direction = 1;
     }
 
-    final builder = AbstractDate.builder();
-    builder.spanDirection = direction;
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
+    dateToken.spanDirection = direction;
 
     DateTime offset = fromDatetime.copyWith();
     final letters = match.group(2)?.split('') ?? const [];
@@ -38,7 +42,7 @@ class TimeSpanRecognizer extends Recognizer {
     for (int i = 0; i < letters.length; i++) {
       // If we have (через) token
       final tokenIndex = prefix != null ? i + 1 : i;
-      final token = tokens[tokenIndex];
+      final token = tokens[tokenIndex + match.start];
       switch (token.symbol) {
         case '0':
           lastNumber = int.tryParse(token.text) ?? 1;
@@ -46,49 +50,49 @@ class TimeSpanRecognizer extends Recognizer {
         case 'Y':
           offset = offset.copyWith(year: offset.year + direction * lastNumber);
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.month);
+          dateToken.fixDownTo(FixPeriod.month);
           break;
         case 'm':
           offset =
               offset.copyWith(month: offset.month + direction * lastNumber);
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.week);
+          dateToken.fixDownTo(FixPeriod.week);
           break;
         case 'w':
           offset = offset.add(Duration(days: 7 * direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.day);
+          dateToken.fixDownTo(FixPeriod.day);
           break;
         case 'd':
           offset = offset.add(Duration(days: direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.day);
+          dateToken.fixDownTo(FixPeriod.day);
           break;
         case 'h':
           offset = offset.add(Duration(hours: direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.time);
+          dateToken.fixDownTo(FixPeriod.time);
           break;
         case 'e':
           offset = offset.add(Duration(minutes: direction * lastNumber));
           lastNumber = 1;
-          builder.fixDownTo(FixPeriod.time);
+          dateToken.fixDownTo(FixPeriod.time);
           break;
       }
     }
 
-    builder.date = offset;
-    if (builder.isFixed(FixPeriod.time)) {
-      builder.time = Duration(hours: offset.hour, minutes: offset.minute);
+    dateToken.date = offset;
+    if (dateToken.isFixed(FixPeriod.time)) {
+      dateToken.time = Duration(hours: offset.hour, minutes: offset.minute);
     }
-    builder.span = offset.difference(fromDatetime);
+    dateToken.span = offset.difference(fromDatetime);
 
-    return [
-      DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
-        date: builder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [dateToken],
+    );
+
+    return true;
   }
 }

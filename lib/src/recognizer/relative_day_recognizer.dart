@@ -1,5 +1,5 @@
 import '../data.dart';
-import '../hors.dart';
+import '../domain.dart';
 import 'recognizer.dart';
 
 class RelativeDayRecognizer extends Recognizer {
@@ -9,19 +9,23 @@ class RelativeDayRecognizer extends Recognizer {
   RegExp get regexp => RegExp(r'[2-6]');
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final token = tokens.first;
+    final tokens = data.tokens;
+    final token = tokens[match.start];
     int? relativeDay = int.tryParse(token.symbol);
-    if (relativeDay == null) return null;
+    if (relativeDay == null) return false;
     relativeDay -= 4;
-    final builder = AbstractDate.builder(
-      date: fromDatetime.add(Duration(days: relativeDay)),
+    final dateToken = DateToken(
+      start: token.start,
+      end: token.end,
     );
-    builder.fixDownTo(FixPeriod.day);
-    return [token.toDateToken(builder.build())];
+    dateToken.date = fromDatetime.add(Duration(days: relativeDay));
+    dateToken.fixDownTo(FixPeriod.day);
+    tokens[match.start] = dateToken;
+    return true;
   }
 }

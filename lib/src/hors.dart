@@ -1,110 +1,146 @@
-import 'dart:math';
-
-import 'package:hors/src/data.dart';
-import 'package:hors/src/utils.dart';
 import 'package:meta/meta.dart';
 
+import 'data.dart';
+import 'domain.dart';
 import 'recognizer/recognizer.dart';
 import 'token/token_parser.dart';
 
+/// A simple class to extract date and time from natural speech.
+///
+/// __Currently only works with russian language__
+///
+/// In many cases all you need to do it's initialize [Hors] with all parsers and recognizer.
+/// ```
+/// final hors = Hors(
+///   recognizers: Recognizer.all,
+///   tokenParsers: TokenParsers.all,
+/// );
+///
+/// final result = hors.parse('Завтра состоится событие');
+/// ```
 @experimental
 class Hors {
+  /// Create a new instance of [Hors] with specific lists of recognizers and parsers.
   @experimental
   const Hors({
     required this.recognizers,
     required this.tokenParsers,
-  }) : assert(tokenParsers.length > 0);
+  })  : assert(recognizers.length > 0),
+        assert(tokenParsers.length > 0);
 
+  /// List of [Recognizer] that will be used in this instance of [Hors].
   final List<Recognizer> recognizers;
+
+  /// List of [TokenParser] that will be used in this instance of [Hors].
   final List<TokenParser> tokenParsers;
 
   static final Pattern _extraSymbols = RegExp('[^0-9а-яё-]');
   static final Pattern _allowSymbols = RegExp('[а-яА-ЯёЁa-zA-Z0-9-]+');
 
+  /// Parse input for possible dates.
+  ///
+  /// Optional [fromDatetime] the date relative to which the intervals are to be measured.
+  /// If it's null, then `DateTime.now()` will be used.
+  ///
+  /// [closestSteps] the maximum number of words between two dates at which will try to combine
+  /// these dates into one, if possible. Default to 4.
   @experimental
-  HorsResult parse(String text, DateTime fromDatetime, [int closestSteps = 4]) {
+  HorsResult parse(
+    String text, [
+    DateTime? fromDatetime,
+    int closestSteps = 4,
+  ]) {
     ParsingData data = ParsingData(
       sourceText: text,
       tokens: _allowSymbols
           .allMatches(text.toLowerCase())
-          .map(_matchToTextToken)
+          .map(matchToTextToken)
           .map(_tokenToMaybeDate)
-          .toList(growable: false),
+          .toList(),
     );
+
+    // Remove extra zeros, because we don't need them
+    fixZeros(data);
+
+    // If we don't have date, then use current datetime
+    fromDatetime ??= DateTime.now();
 
     for (final recognizer in recognizers) {
-      data = recognizer.recognize(data, fromDatetime);
+      recognizer.recognize(data, fromDatetime);
     }
 
-    final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)((N?[fo]?)(@))');
-    final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)((N?[fot]?)(@))');
+    final RegExp startPeriodsPattern = RegExp(r'(?<!(t))(@)(?=((N?[fo]?)(@)))');
+    final RegExp endPeriodsPattern = RegExp(r'(?<=(t))(@)(?=((N?[fot]?)(@)))');
 
-    data = parsing(
+    // Try to collapse standing side by side [DateToken] into single one.
+    parsing(
       data,
       startPeriodsPattern,
-      (match, tokens) => collapseDates(fromDatetime, match, tokens),
+      collapseDates,
     );
 
-    data = parsing(
+    // Try to collapse standing side by side [DateToken] into single one.
+    parsing(
       data,
       endPeriodsPattern,
-      (match, tokens) => collapseDates(fromDatetime, match, tokens),
+      collapseDates,
     );
 
-    data = parsing(
+    // Try to combine standing side by side [DateToken].
+    parsing(
       data,
       endPeriodsPattern,
-      (match, tokens) => takeFromA(fromDatetime, match, tokens),
+      fillAdjacentDates,
     );
 
-    data = parsing(
+    // Try to combine standing side by side [DateToken].
+    parsing(
       data,
       startPeriodsPattern,
-      (match, tokens) => takeFromA(fromDatetime, match, tokens),
+      fillAdjacentDates,
     );
 
-    if (closestSteps > 1) {
-      final regexp = RegExp('(@)[^@t]{1,$closestSteps}(@)');
+    if (closestSteps >= 1) {
+      // Case, when two date tokens is related, but stay far from each other
+      // We need to collapse them logically, but not as a string
+      //
+      // Example: `Завтра пойду гулять в 11 часов`
+      final regexp = RegExp('(@)[^@t]{1,$closestSteps}(?=(@))');
+
+      // When we combine tokens like this, then we need to indicate them.
+      // This is used for it and increment for each group.
       int lastGroup = 0;
-      data = parsing(
+      parsing(
         data,
         regexp,
-        (match, tokens) {
-          return collapseClosest(match, tokens, lastGroup++);
-        },
+        (match, data) => collapseOnDistance(match, data, lastGroup++),
       );
     }
 
     final tokens = getFinalTokens(fromDatetime, data);
+    final textWithoutTokens = generateTextWithoutTokens(text, tokens);
 
     return HorsResult(
-      source: text,
+      sourceText: text,
       tokens: tokens,
+      textWithoutTokens: textWithoutTokens,
     );
   }
 
-  static Token _matchToTextToken(Match match) {
-    return TextToken(
-      text: match.group(0)!,
-      start: match.start,
-      end: match.end,
-    );
-  }
-
+  /// Try to transform [Token] to [MaybeDateToken].
+  /// If this is not possible, then just return original [token].
   Token _tokenToMaybeDate(Token token) {
-    final symbol = wordToSymbol(token.text);
+    final symbol = _wordToSymbol(token.text);
     if (symbol != null) {
       return token.toMaybeDateToken(symbol);
     }
     return token;
   }
 
-  // static List<Token> getTokens(String text) {
-  //   text = text.toLowerCase();
-  //   _allowSymbols.allMatches(text);
-  // }
-
-  String? wordToSymbol(String word) {
+  /// Parse [word] and try to found symbol for that word.
+  /// Return null if no symbol found.
+  // TODO: Maybe should optimize this code with hashes.
+  String? _wordToSymbol(String word) {
     final rawWord = word.replaceAll(_extraSymbols, '').toLowerCase().trim();
 
     for (final token in tokenParsers) {
@@ -116,809 +152,188 @@ class Hors {
   }
 }
 
+/// Result of parsing from [Hors.parse].
+///
+/// [sourceText] is just initial text, that was parsed.
+/// [tokens] is collection of all parsed dates.
+/// [textWithoutTokens] is initial text, but without date tokens, and also starts with capital letter.
 @experimental
 @immutable
 class HorsResult {
-  final String source;
+  /// Initial text that was parsed.
+  final String sourceText;
+
+  /// List of [DateTimeToken] that was found in [sourceText].
+  ///
+  /// Can be empty.
   final List<DateTimeToken> tokens;
 
-  const HorsResult({
-    required this.source,
-    required this.tokens,
-  });
+  /// Text without dates.
+  final String textWithoutTokens;
 
-  // todo: better algo + results
-  String get textWithoutDates {
-    String str = source;
-    for (final token in tokens.reversed) {
-      str = str.replaceRange(token.start, token.end, '');
-    }
-    return str.trim();
-  }
+  /// Used for create hors results.
+  const HorsResult({
+    required this.sourceText,
+    required this.tokens,
+    required this.textWithoutTokens,
+  });
 
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is HorsResult &&
           runtimeType == other.runtimeType &&
-          source == other.source &&
-          tokens == other.tokens;
+          sourceText == other.sourceText &&
+          tokens == other.tokens &&
+          textWithoutTokens == other.textWithoutTokens;
 
   @override
-  int get hashCode => Object.hash(source, tokens);
+  int get hashCode => Object.hash(sourceText, tokens, textWithoutTokens);
 
   @override
-  String toString() => 'HorsResult{source: $source, tokens: $tokens}';
-
-// todo: string without tokens
+  String toString() => 'HorsResult{source: $sourceText, tokens: $tokens}';
 }
 
-enum FixPeriod {
-  none(0),
-  time(1),
-  timeUncertain(2),
-  day(4),
-  week(8),
-  month(16),
-  year(32);
-
-  final int bit;
-
-  const FixPeriod(this.bit);
-}
-
-class AbstractDateBuilder {
-  DateTime? date;
-  Duration? time;
-  Duration? span;
-  int fixes;
-  bool fixDayOfWeek;
-  int spanDirection;
-
-  AbstractDateBuilder._({
-    this.date,
-    this.time,
-    this.span,
-    this.fixes = 0,
-    this.fixDayOfWeek = false,
-    this.spanDirection = 0,
-  });
-
-  AbstractDateBuilder.fromDate(AbstractDate date)
-      : date = date.date,
-        time = date.time,
-        span = date.span,
-        fixes = date.fixes,
-        fixDayOfWeek = date.fixDayOfWeek,
-        spanDirection = date.spanDirection;
-
-  AbstractDate build() {
-    return AbstractDate._(
-      date: date,
-      time: time,
-      span: span,
-      fixes: fixes,
-      fixDayOfWeek: fixDayOfWeek,
-      spanDirection: spanDirection,
-    );
-  }
-
-  void fix(FixPeriod fix) {
-    fixes = fixes | fix.bit;
-  }
-
-  void fixDownTo(FixPeriod period) {
-    for (final p in FixPeriod.values) {
-      if (p.index < period.index) {
-        continue;
-      }
-
-      fix(p);
-    }
-  }
-
-  bool isFixed(FixPeriod period) {
-    return (fixes & period.bit) > 0;
-  }
-
-  int get maxPeriod {
-    int maxVal = 0;
-    for (final period in FixPeriod.values) {
-      if (period.index > maxVal) {
-        maxVal = period.index;
-      }
-    }
-
-    return log(maxVal).toInt();
-  }
-
-  FixPeriod get maxFixed {
-    for (final period in FixPeriod.values) {
-      if (isFixed(period)) {
-        return period;
-      }
-    }
-
-    return FixPeriod.none;
-  }
-}
-
-class AbstractDate {
-  final DateTime? date;
-  final Duration? time;
-  final Duration? span;
-  final int fixes;
-  final bool fixDayOfWeek;
-  final int spanDirection;
-  final int? duplicateGroup;
-
-  AbstractDate._({
-    this.date,
-    this.time,
-    this.span,
-    this.fixes = 0,
-    this.fixDayOfWeek = false,
-    this.spanDirection = 0,
-    this.duplicateGroup,
-  });
-
-  static AbstractDateBuilder builder({
-    DateTime? date,
-    Duration? time,
-    Duration? span,
-    int fixes = 0,
-    bool fixDayOfWeek = false,
-    int? spanDirection,
-  }) =>
-      AbstractDateBuilder._(
-        date: date,
-        time: time,
-        span: span,
-        fixes: fixes,
-        fixDayOfWeek: fixDayOfWeek,
-        spanDirection: spanDirection ?? 0,
-      );
-
-  bool isFixed(FixPeriod period) {
-    return (fixes & period.bit) > 0;
-  }
-
-  FixPeriod get minFixed {
-    for (final period in FixPeriod.values.reversed) {
-      if (isFixed(period)) {
-        return period;
-      }
-    }
-
-    return FixPeriod.none;
-  }
-
-  FixPeriod get maxFixed {
-    for (final period in FixPeriod.values) {
-      if (isFixed(period)) {
-        return period;
-      }
-    }
-
-    return FixPeriod.none;
-  }
-
-  AbstractDate withDuplicateGroup(int group) {
-    return AbstractDate._(
-      date: date,
-      time: time,
-      span: span,
-      fixes: fixes,
-      fixDayOfWeek: fixDayOfWeek,
-      spanDirection: spanDirection,
-      duplicateGroup: group,
-    );
-  }
-}
-
-class ParseResult {
-  final String output;
-  final List<AbstractDate> tokens;
-
-  const ParseResult({
-    required this.output,
-  }) : tokens = const [];
-
-  const ParseResult._({
-    required this.output,
-    required this.tokens,
-  });
-
-  ParseResult copyWith({
-    required String output,
-    required List<AbstractDate> tokens,
-  }) {
-    return ParseResult._(
-      output: output,
-      tokens: tokens,
-    );
-  }
-}
-
-List<Token>? collapseDates(
-  DateTime fromDatetime,
-  Match match,
-  List<Token> tokens,
-) {
-  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
-  final secondDateIndex = tokens.indexWhere(
-    (token) => token.symbol == '@',
-    firstDateIndex + 1,
-  );
-
-  final firstDate = tokens[firstDateIndex] as DateToken;
-  final secondDate = tokens[secondDateIndex] as DateToken;
-
-  if (!canCollapse(firstDate.date, secondDate.date)) {
-    return null;
-  }
-
-  final DateToken? newToken;
-  if (firstDate.date.minFixed.index < secondDate.date.minFixed.index) {
-    newToken = collapse(secondDate, firstDate, false);
-  } else {
-    newToken = collapse(firstDate, secondDate, false);
-  }
-
-  if (newToken == null) return null;
-  return [newToken];
-}
-
-bool canCollapse(AbstractDate first, AbstractDate second) {
-  if ((first.fixes & second.fixes) != 0) return false;
-  return first.spanDirection != -second.spanDirection ||
-      first.spanDirection == 0;
-}
-
-// todo isLinked always false?
-DateToken? collapse(DateToken baseToken, DateToken coverToken, bool isLinked) {
-  final base = baseToken.date;
-  final cover = coverToken.date;
-
-  if (!canCollapse(base, cover)) {
-    return null;
-  }
-
-  // todo: if base date is null?
-  final builder = AbstractDateBuilder.fromDate(base);
-
-  if (base.spanDirection != 0 && cover.spanDirection != 0) {
-    builder.spanDirection = base.spanDirection + cover.spanDirection;
-  }
-
-  if (!base.isFixed(FixPeriod.year) && cover.isFixed(FixPeriod.year)) {
-    builder.date = DateTime(
-      cover.date!.year,
-      builder.date!.month,
-      builder.date!.day,
-    );
-    builder.fix(FixPeriod.year);
-  }
-
-  if (!base.isFixed(FixPeriod.month) && cover.isFixed(FixPeriod.month)) {
-    builder.date = DateTime(
-      builder.date!.year,
-      cover.date!.month,
-      builder.date!.day,
-    );
-    builder.fix(FixPeriod.month);
-  }
-
-  if (!base.isFixed(FixPeriod.week) && cover.isFixed(FixPeriod.week)) {
-    if (base.isFixed(FixPeriod.day)) {
-      builder.date = takeDayOfWeekFrom(cover.date!, builder.date!);
-      builder.fix(FixPeriod.week);
-    } else if (!cover.isFixed(FixPeriod.day)) {
-      builder.date = DateTime(
-        builder.date!.year,
-        builder.date!.month,
-        cover.date!.day,
-      );
-      builder.fix(FixPeriod.week);
-    }
-  } else if (base.isFixed(FixPeriod.week) && cover.isFixed(FixPeriod.day)) {
-    builder.date = takeDayOfWeekFrom(builder.date!, cover.date!);
-    builder.fix(FixPeriod.week);
-    builder.fix(FixPeriod.day);
-  }
-
-  if (!base.isFixed(FixPeriod.day) && cover.isFixed(FixPeriod.day)) {
-    if (cover.fixDayOfWeek) {
-      final current = DateTime(
-        builder.date!.year,
-        builder.date!.month,
-        builder.isFixed(FixPeriod.week) ? builder.date!.day : 0,
-      );
-      builder.date = takeDayOfWeekFrom(
-        current,
-        cover.date!,
-        !base.isFixed(FixPeriod.week),
-      );
-    } else {
-      builder.date = DateTime(
-        builder.date!.year,
-        builder.date!.month,
-        cover.date!.day,
-      );
-    }
-    builder.fix(FixPeriod.week);
-    builder.fix(FixPeriod.day);
-  }
-
-  bool timeGot = false;
-  if (!base.isFixed(FixPeriod.time) && cover.isFixed(FixPeriod.time)) {
-    builder.fix(FixPeriod.time);
-    if (!base.isFixed(FixPeriod.timeUncertain)) {
-      builder.time = cover.time;
-    } else {
-      if (base.time!.hours <= 12 && cover.time!.hours > 12) {
-        if (!isLinked) {
-          builder.time = builder.time! + Duration(hours: 12);
-        }
-      }
-    }
-
-    timeGot = true;
-  }
-
-  if (!base.isFixed(FixPeriod.timeUncertain) &&
-      cover.isFixed(FixPeriod.timeUncertain)) {
-    builder.fix(FixPeriod.timeUncertain);
-    if (base.isFixed(FixPeriod.time)) {
-      final offset = cover.time!.hours <= 12 && base.time!.hours > 12 ? 12 : 0;
-      builder.time = Duration(
-        hours: cover.time!.hours + offset,
-        minutes: cover.time!.minutes,
-      );
-    } else {
-      builder.time = cover.time;
-      timeGot = true;
-    }
-  }
-
-  if (timeGot && base.spanDirection != 0 && cover.spanDirection == 0) {
-    if (base.spanDirection > 0) {
-      builder.span = base.time! + base.time!;
-    } else {
-      builder.span = base.time! - base.time!;
-    }
-  }
-
-  return DateToken(
-    start: min(baseToken.start, coverToken.start),
-    end: max(baseToken.end, coverToken.end),
-    date: builder.build(),
-  );
-}
-
-// todo: Это практически прямая реализация TimeSpan из C#
-// но кажется, что это не то, что по правде нужно в реализации
-extension on Duration {
-  int get hours =>
-      (inSeconds ~/ Duration.secondsPerHour) % Duration.hoursPerDay;
-
-  int get minutes =>
-      (inSeconds ~/ Duration.secondsPerMinute) % Duration.minutesPerHour;
-}
-
-DateTime takeDayOfWeekFrom(
-  DateTime current,
-  DateTime from, [
-  bool forward = false,
-]) {
-  int diff = from.weekday - current.weekday;
-  if (forward && diff < 0) diff += 7;
-  return current.add(Duration(days: diff));
-}
-
-// todo
-List<Token> takeFromA(
-  DateTime fromDatetime,
-  Match match,
-  List<Token> tokens,
-) {
-  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
-  final secondDateIndex = tokens.indexWhere(
-    (token) => token.symbol == '@',
-    firstDateIndex + 1,
-  );
-
-  final firstToken = tokens[firstDateIndex] as DateToken;
-  final secondToken = tokens[secondDateIndex] as DateToken;
-
-  final newTokens = takeFromAdjacent(firstToken, secondToken, false);
-  final newFirstToken = newTokens[0];
-  final newSecondToken = newTokens[1];
-
-  return tokens
-    ..[firstDateIndex] = newFirstToken
-    ..[secondDateIndex] = newSecondToken;
-}
-
-// todo: нужны примеры для теста
-List<DateToken> takeFromAdjacent(
-  DateToken firstToken,
-  DateToken secondToken,
-  bool isLinked,
-) {
-  final firstDateCopy = AbstractDateBuilder.fromDate(firstToken.date);
-  firstDateCopy.fixes &= ~secondToken.date.fixes;
-  final firstCopy = DateToken(
-    start: firstToken.start,
-    end: firstToken.end,
-    date: firstDateCopy.build(),
-  );
-
-  final secondDateCopy = AbstractDateBuilder.fromDate(secondToken.date);
-  secondDateCopy.fixes &= ~firstToken.date.fixes;
-  final secondCopy = DateToken(
-    start: secondToken.start,
-    end: secondToken.end,
-    date: secondDateCopy.build(),
-  );
-
-  final newTokens = <DateToken>[];
-  if (firstToken.date.minFixed.index > secondCopy.date.minFixed.index) {
-    final token = collapse(firstToken, secondCopy, isLinked);
-    newTokens.add(token ?? firstToken);
-  } else {
-    final token = collapse(secondCopy, firstToken, isLinked);
-    newTokens.add(token ?? firstToken);
-  }
-
-  if (secondToken.date.minFixed.index > firstCopy.date.minFixed.index) {
-    final token = collapse(secondToken, firstCopy, isLinked);
-    newTokens.add(token ?? secondToken);
-  } else {
-    final token = collapse(firstCopy, secondToken, isLinked);
-    newTokens.add(token ?? secondToken);
-  }
-
-  return newTokens.toList(growable: false);
-}
-
-List<Token>? collapseClosest(
-  Match match,
-  List<Token> tokens,
-  int group,
-) {
-  final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
-  final secondDateIndex = tokens.indexWhere(
-    (token) => token.symbol == '@',
-    firstDateIndex + 1,
-  );
-
-  final firstDate = tokens[firstDateIndex] as DateToken;
-  final secondDate = tokens[secondDateIndex] as DateToken;
-
-  if (!canCollapse(firstDate.date, secondDate.date)) {
-    return null;
-  }
-
-  DateToken newFirst;
-  DateToken newSecond;
-  if (firstDate.date.minFixed.index > secondDate.date.minFixed.index) {
-    newFirst = collapse(firstDate, secondDate, true) ?? firstDate;
-    newSecond = secondDate;
-  } else {
-    newFirst = firstDate;
-    newSecond = collapse(secondDate, firstDate, true) ?? secondDate;
-  }
-
-  final int duplicateGroup;
-  if (firstDate.date.duplicateGroup != null) {
-    duplicateGroup = firstDate.date.duplicateGroup!;
-  } else if (secondDate.date.duplicateGroup != null) {
-    duplicateGroup = secondDate.date.duplicateGroup!;
-  } else {
-    duplicateGroup = group;
-  }
-
-  // todo: some code improvement
-  newFirst = DateToken(
-    start: newFirst.start,
-    end: newFirst.end,
-    date: newFirst.date.withDuplicateGroup(duplicateGroup),
-  );
-
-  newSecond = DateToken(
-    start: newSecond.start,
-    end: newSecond.end,
-    date: newSecond.date.withDuplicateGroup(duplicateGroup),
-  );
-
-  return tokens
-    ..[firstDateIndex] = newFirst
-    ..[secondDateIndex] = newSecond;
-}
-
-List<DateTimeToken> getFinalTokens(
-  DateTime fromDatetime,
-  ParsingData data,
-) {
-  final regexp = RegExp(r'(([fo]?(@)t(@))|([fo]?(@)))');
-  final tokens = regexp
-      .allMatches(data.pattern)
-      .map((match) => parseFinalToken(
-            fromDatetime,
-            match,
-            data.tokens.sublist(match.start, match.end),
-          ))
-      .toList(growable: false);
-
-  return tokens;
-}
-
-DateTimeToken parseFinalToken(
-  DateTime fromDatetime,
-  Match match,
-  List<Token> tokens,
-) {
-  final DateTimeToken token;
-  if (match.group(3) != null && match.group(4) != null) {
-    // if we match a period
-    // from date to date
-    final firstDateIndex = tokens.indexWhere((token) => token.symbol == '@');
-    final secondDateIndex = tokens.indexWhere(
-      (token) => token.symbol == '@',
-      firstDateIndex + 1,
-    );
-
-    DateToken firstDate = tokens[firstDateIndex] as DateToken;
-    DateToken secondDate = tokens[secondDateIndex] as DateToken;
-
-    final dates = takeFromAdjacent(firstDate, secondDate, true);
-    firstDate = dates[0];
-    secondDate = dates[1];
-
-    final fromToken = convertToken(firstDate, fromDatetime);
-    final toToken = convertToken(secondDate, fromDatetime);
-    DateTime dateTo = toToken.date;
-
-    final resolution = secondDate.date.maxFixed;
-    while (dateTo.isBefore(fromToken.date)) {
-      // ignore: missing_enum_constant_in_switch
-      switch (resolution) {
-        case FixPeriod.time:
-          dateTo = dateTo.add(Duration(days: 1));
-          break;
-        case FixPeriod.day:
-          dateTo = dateTo.add(Duration(days: 7));
-          break;
-        case FixPeriod.week:
-          // todo: add month?
-          dateTo = dateTo.add(Duration(days: 30));
-          break;
-        case FixPeriod.month:
-          // todo: add year?
-          dateTo = dateTo.add(Duration(days: 365));
-          break;
-        default:
-          dateTo = dateTo.add(Duration(hours: 12));
-          break;
-      }
-    }
-
-    token = DateTimeToken(
-      date: fromToken.date,
-      dateTo: dateTo,
-      start: fromToken.start,
-      end: toToken.end,
-      type: DateTimeTokenType.period,
-      hasTime: fromToken.hasTime || toToken.hasTime,
-    );
-  } else {
-    // this is single date
-    final dateToken =
-        tokens.firstWhere((token) => token.symbol == '@') as DateToken;
-    token = convertToken(dateToken, fromDatetime);
-    print(token);
-  }
-
-  // todo start and end
-  // todo index to text
-
-  return token;
-}
-
+/// Type of founded date token.
+@experimental
 enum DateTimeTokenType {
+  /// Fixed date and (maybe) time.
   fixed,
+
+  /// Period from [DateTimeToken.date] to [DateTimeToken.dateTo].
+  ///
+  /// [DateTimeToken.dateTo] is not null in this case.
   period,
+
+  /// Span forward.
+  ///
+  /// [DateTimeToken.date] is show datetime of event.
+  /// [DateTimeToken.span] is not null and show duration from current datetime to event.
   spanForward,
+
+  /// Span backward.
+  ///
+  /// [DateTimeToken.date] is show datetime of event.
+  /// [DateTimeToken.span] is not null and show duration from current datetime to event.
   spanBackward,
 }
 
-// todo duplicates
+/// Data class with everything over one parsed date.
 @immutable
+@experimental
 class DateTimeToken {
+  /// Main datetime field that was parsed.
+  ///
+  /// When [type] is [DateTimeTokenType.fixed], then this field is just datetime of parsed string.
+  /// When [type] is [DateTimeTokenType.period], then this field is start point in time of the period.
+  /// When [type] is either [DateTimeTokenType.spanForward] or [DateTimeTokenType.spanBackward], then this field is datetime of parsed string.
+  ///
+  /// If field [hasTime] is true, then time in this field specify exactly time.
+  /// Otherwise time fields can be ignored.
+  ///
+  /// Every other field in this class it's works around this one.
   final DateTime date;
+
+  /// Datetime that indicates end of period.
+  ///
+  /// Not null in case, when [type] of this token is [DateTimeTokenType.period].
+  /// In any other case it's null.
+  ///
+  /// If field [hasTime] is true, then time in this field specify exactly time.
+  /// Otherwise time fields can be ignored.
   final DateTime? dateTo;
+
+  /// Duration of span, that was used for [date].
+  ///
+  /// Not null in case, when [type] either is [DateTimeTokenType.spanForward] or [DateTimeTokenType.spanBackward].
+  /// In any other case it's null.
   final Duration? span;
+
+  /// Indicate if in any [date] or/and [dateTo] is specify time.
   final bool hasTime;
-  final int start;
-  final int end;
+
+  /// Ranges of this [DateTimeToken] in input source text.
+  final List<IntRange> ranges;
+
+  /// Type of this token.
+  ///
+  /// See [DateTimeTokenType] for more info.
   final DateTimeTokenType type;
-  final int? duplicateGroup;
 
   const DateTimeToken({
     required this.date,
-    this.dateTo,
-    this.span,
-    this.hasTime = false,
-    required this.start,
-    required this.end,
+    required this.dateTo,
+    required this.span,
+    required this.hasTime,
+    required this.ranges,
     required this.type,
-    this.duplicateGroup,
   });
 
   @override
-  String toString() => 'DateTimeToken($date)';
+  String toString() {
+    final sb = StringBuffer('DateTimeToken, ');
+
+    final typeName = type.toString().split('.').last;
+    sb.write(typeName);
+    sb.write(':\n\t');
+
+    switch (type) {
+      case DateTimeTokenType.fixed:
+        sb.write(date);
+        break;
+      case DateTimeTokenType.period:
+        sb.write('From:\t');
+        sb.write(date);
+        sb.write('\n\tTo:\t\t');
+        sb.write(dateTo);
+        break;
+      case DateTimeTokenType.spanForward:
+      case DateTimeTokenType.spanBackward:
+        sb.write('Date:\t');
+        sb.write(date);
+        sb.write('\n\tSpan:\t');
+        sb.write(span);
+        break;
+    }
+    return sb.toString();
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      other is DateTimeToken &&
+      runtimeType == other.runtimeType &&
+      date == other.date &&
+      dateTo == other.dateTo &&
+      span == other.span &&
+      hasTime == other.hasTime &&
+      ranges == other.ranges &&
+      type == other.type;
+
+  @override
+  int get hashCode => Object.hash(date, dateTo, span, hasTime, ranges, type);
 }
 
-class DateTimeTokenBuilder {
-  DateTime? date;
-  DateTime? dateTo;
-  Duration? span;
-  bool hasTime = false;
-  int start;
-  int end;
-  DateTimeTokenType type = DateTimeTokenType.fixed;
-  int? duplicateGroup;
+/// Range of intergers.
+@immutable
+class IntRange {
+  final int start;
+  final int end;
 
-  DateTimeTokenBuilder({
+  const IntRange({
     required this.start,
     required this.end,
   });
 
-  DateTimeToken build() {
-    return DateTimeToken(
-      date: date!,
-      dateTo: dateTo,
-      span: span,
-      hasTime: hasTime,
-      start: start,
-      end: end,
-      type: type,
-      duplicateGroup: duplicateGroup,
-    );
-  }
+  @override
+  bool operator ==(Object other) =>
+      other is IntRange &&
+      runtimeType == other.runtimeType &&
+      start == other.start &&
+      end == other.end;
+
+  @override
+  int get hashCode => Object.hash(start, end);
+
+  @override
+  String toString() => 'IntRange($start, $end)';
 }
-
-DateTimeToken convertToken(DateToken token, DateTime fromDatetime) {
-  final minFixed = token.date.minFixed;
-  final dateBuilder = AbstractDateBuilder.fromDate(token.date);
-  dateBuilder.fixDownTo(minFixed);
-
-  // ignore: missing_enum_constant_in_switch
-  switch (minFixed) {
-    case FixPeriod.time:
-    case FixPeriod.timeUncertain:
-      dateBuilder.date = fromDatetime;
-      break;
-    case FixPeriod.day:
-      final userDow = fromDatetime.weekday;
-      final dateDow = dateBuilder.date!.weekday;
-      int diff = dateDow - userDow;
-      if (diff <= 0) {
-        diff += 7;
-      }
-      final newDate = fromDatetime.add(Duration(days: diff));
-      dateBuilder.date = DateTime(
-        newDate.year,
-        newDate.month,
-        newDate.day,
-      );
-      break;
-    case FixPeriod.month:
-      dateBuilder.date = DateTime(
-        fromDatetime.isAfter(dateBuilder.date!)
-            ? fromDatetime.year + 1
-            : fromDatetime.year,
-        dateBuilder.date!.month,
-        dateBuilder.date!.day,
-      );
-      break;
-  }
-
-  if (dateBuilder.isFixed(FixPeriod.time) ||
-      dateBuilder.isFixed(FixPeriod.timeUncertain)) {
-    dateBuilder.date = DateTime(
-      dateBuilder.date!.year,
-      dateBuilder.date!.month,
-      dateBuilder.date!.day,
-      dateBuilder.time!.hours,
-      dateBuilder.time!.minutes,
-    );
-  } else {
-    dateBuilder.date = DateTime(
-      dateBuilder.date!.year,
-      dateBuilder.date!.month,
-      dateBuilder.date!.day,
-    );
-  }
-
-  final builder = DateTimeTokenBuilder(
-    start: token.start,
-    end: token.end,
-  );
-
-  builder.duplicateGroup = token.date.duplicateGroup;
-
-  // ignore: missing_enum_constant_in_switch
-  switch (dateBuilder.maxFixed) {
-    case FixPeriod.time:
-    case FixPeriod.timeUncertain:
-      builder.type = DateTimeTokenType.fixed;
-      builder.date = dateBuilder.date;
-      builder.dateTo = dateBuilder.date;
-      builder.hasTime = true;
-      break;
-    case FixPeriod.day:
-      builder.type = DateTimeTokenType.fixed;
-      builder.date = dateBuilder.date;
-      builder.dateTo = dateBuilder.date!.add(almostOneDay);
-      break;
-    case FixPeriod.week:
-      final weekday = dateBuilder.date!.weekday;
-      builder.type = DateTimeTokenType.period;
-      builder.date = dateBuilder.date!.add(Duration(days: 1 - weekday));
-      builder.dateTo =
-          dateBuilder.date!.add(Duration(days: 7 - weekday)).add(almostOneDay);
-      break;
-    case FixPeriod.month:
-      builder.type = DateTimeTokenType.period;
-      builder.date = DateTime(
-        dateBuilder.date!.year,
-        dateBuilder.date!.month,
-        1,
-      );
-      builder.dateTo = DateTime(
-        dateBuilder.date!.year,
-        dateBuilder.date!.month,
-        getDaysInMonth(dateBuilder.date!.year, dateBuilder.date!.month),
-        23,
-        59,
-        59,
-        999,
-      );
-      break;
-    case FixPeriod.year:
-      builder.type = DateTimeTokenType.period;
-      builder.date = DateTime(
-        dateBuilder.date!.year,
-        1,
-        1,
-      );
-      builder.dateTo = DateTime(
-        dateBuilder.date!.year,
-        12,
-        31,
-        23,
-        59,
-        59,
-        999,
-      );
-      break;
-  }
-
-  if (dateBuilder.spanDirection != 0) {
-    builder.type = dateBuilder.spanDirection > 0
-        ? DateTimeTokenType.spanForward
-        : DateTimeTokenType.spanBackward;
-    builder.span = dateBuilder.span;
-  }
-
-  return builder.build();
-}
-
-const Duration almostOneDay = Duration(
-  hours: 23,
-  minutes: 59,
-  seconds: 59,
-  milliseconds: 999,
-);

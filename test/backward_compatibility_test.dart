@@ -112,12 +112,10 @@ void main() {
       expect(firstDate.type, DateTimeTokenType.fixed);
       expect(firstDate.date.hour, 2);
 
-      // todo: wrong date?
       final secondDate = result.tokens[1];
       expect(secondDate.type, DateTimeTokenType.fixed);
       expect(secondDate.date.hour, 3);
 
-      // todo: wrong date?
       final thirdDate = result.tokens[2];
       expect(thirdDate.type, DateTimeTokenType.fixed);
       expect(thirdDate.date.hour, 0);
@@ -293,7 +291,7 @@ void main() {
       );
 
       expect(result.tokens.length, 1);
-      expect(result.textWithoutDates, 'состоится событие!');
+      expect(result.textWithoutTokens, 'Состоится событие!');
 
       result = hors.parse(
         '=== 26!%;марта   в 18:00 , , , будет *** экзамен!!',
@@ -301,9 +299,8 @@ void main() {
         3,
       );
 
-      // todo:
-      // expect(result.tokens.length, 1);
-      // expect(result.textWithoutDates, '=== , , , будет *** экзамен!!');
+      expect(result.tokens.length, 1);
+      expect(result.textWithoutTokens, '=== , , , будет *** экзамен!!');
     },
   );
 
@@ -316,9 +313,8 @@ void main() {
         3,
       );
 
-      // todo
-      // expect(result.tokens.length, 1);
-      // todo: text
+      expect(result.tokens.length, 1);
+      expect(result.textWithoutTokens, 'Будет событие и будет оно');
       final date = result.tokens.first;
       expect(date.type, DateTimeTokenType.fixed);
       expect(date.date.day, 18);
@@ -326,16 +322,253 @@ void main() {
     },
   );
 
-  // test(
-  //   '',
-  //   () {
-  //     final result = hors.parse(
-  //       text,
-  //       fromDatetime,
-  //     );
-  //
-  //     expect(result.tokens.length, 1);
-  //     final date = result.tokens.first;
-  //   },
-  // );
+  test(
+    'Collapse Distance Time',
+    () {
+      var result = hors.parse(
+        'в четверг будет событие в 16 0 0',
+        DateTime(2019, 10, 8),
+        3,
+      );
+
+      expect(result.tokens.length, 1);
+      expect(result.textWithoutTokens, 'Будет событие');
+      var date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 16);
+      expect(date.date.day, 10);
+
+      result = hors.parse(
+        'завтра встреча с другом в 12',
+        DateTime(2019, 10, 11),
+        5,
+      );
+
+      expect(result.tokens.length, 1);
+      date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 12);
+      expect(date.date.day, 12);
+
+      result = hors.parse(
+        'в четверг будет хорошее событие в 16 0 0',
+        DateTime(2019, 10, 8),
+        2,
+      );
+
+      expect(result.tokens.length, 2);
+      final dateFirst = result.tokens[0];
+      final dateLast = result.tokens[1];
+      expect(dateFirst.type, DateTimeTokenType.fixed);
+      expect(dateFirst.hasTime, false);
+      expect(dateLast.hasTime, true);
+      expect(dateLast.date.hour, 16);
+      expect(dateFirst.date.day, 10);
+    },
+  );
+
+  test(
+    'Time After Day',
+    () {
+      final result = hors.parse(
+        'в четверг 16 0 0 будет событие',
+        DateTime(2019, 10, 8),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 16);
+      expect(date.date.day, 10);
+    },
+  );
+
+  test(
+    'Time Period',
+    () {
+      final result = hors.parse(
+        'В следующий четверг с 9 утра до 6 вечера важный экзамен!',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 9);
+      expect(date.date.day, 12);
+      expect(date.date.month, 9);
+      expect(date.dateTo?.hour, 18);
+      expect(date.dateTo?.day, 12);
+      expect(date.dateTo?.month, 9);
+      expect(date.date.year, 2019);
+      expect(date.dateTo?.year, 2019);
+    },
+  );
+
+  test(
+    'Complex Period',
+    () {
+      final result = hors.parse(
+        'хакатон с 12 часов 18 сентября до 12 часов 20 сентября',
+        DateTime(2019, 7, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 12);
+      expect(date.date.day, 18);
+      expect(date.date.month, 9);
+      expect(date.dateTo?.hour, 12);
+      expect(date.dateTo?.day, 20);
+      expect(date.dateTo?.month, 9);
+      expect(date.date.year, 2019);
+      expect(date.dateTo?.year, 2019);
+    },
+  );
+
+  test(
+    'Time Before Day',
+    () {
+      final result = hors.parse(
+        '12 часов 12 сентября будет встреча',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 12);
+      expect(date.date.day, 12);
+      expect(date.date.month, 9);
+    },
+  );
+
+  test(
+    'Time Hour Of Day',
+    () {
+      final result = hors.parse(
+        '24 сентября в час дня',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.hasTime, true);
+      expect(date.date.hour, 13);
+    },
+  );
+
+  test(
+    'Fix Period',
+    () {
+      final result = hors.parse(
+        'на выходных будет хорошо',
+        DateTime(2019, 9, 7),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.day, 14);
+      expect(date.dateTo?.day, 15);
+    },
+  );
+
+  test(
+    'Dates Period',
+    () {
+      final strings = [
+        'с 11 по 15 сентября будет командировка',
+        '11 по 15 сентября будет командировка',
+        'с 11 до 15 сентября будет командировка',
+      ];
+
+      for (final string in strings) {
+        final result = hors.parse(
+          string,
+          DateTime(2019, 8, 6),
+        );
+
+        expect(result.tokens.length, 1);
+        final date = result.tokens.first;
+
+        expect(date.type, DateTimeTokenType.period);
+        expect(date.date.day, 11);
+        expect(date.dateTo?.day, 15);
+        expect(date.date.month, 9);
+        expect(date.dateTo?.month, 9);
+      }
+
+      final result = hors.parse(
+        'с 11 до 15 числа будет командировка',
+        DateTime(2019, 9, 6),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.day, 11);
+      expect(date.dateTo?.day, 15);
+      expect(date.date.month, 9);
+      expect(date.dateTo?.month, 9);
+    },
+  );
+
+  test(
+    'Days Of Week',
+    () {
+      final result = hors.parse(
+        'во вторник встреча с заказчиком',
+        DateTime(2019, 9, 6),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.date.day, 10);
+    },
+  );
+
+  test(
+    'Holidays',
+    () {
+      final result = hors.parse(
+        'в эти выходные еду на дачу',
+        DateTime(2019, 9, 2),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+
+      expect(date.type, DateTimeTokenType.period);
+      expect(date.date.day, 7);
+      expect(date.dateTo?.day, 8);
+    },
+  );
+
+  test(
+    'Holiday',
+    () {
+      final result = hors.parse(
+        'пойду гулять в следующий выходной',
+        DateTime(2019, 9, 2),
+      );
+
+      expect(result.tokens.length, 1);
+      final date = result.tokens.first;
+
+      expect(date.type, DateTimeTokenType.fixed);
+      expect(date.date.day, 14);
+      expect(date.dateTo?.day, 14);
+    },
+  );
 }

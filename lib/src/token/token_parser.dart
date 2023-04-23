@@ -1,28 +1,42 @@
 import '../data.dart';
 
+/// Plural parsers option mode.
 enum ParserPluralOption {
+  /// Used for indicate, that any form will be successful parsed.
   all,
+
+  /// Used for indicate, that only singular worlds will be successful parsed.
   singular,
+
+  /// Used for indicate, that only plural will be successful parsed.
   plural,
 }
 
+/// Base class for parsing words to symbol.
 abstract class TokenParser {
   const TokenParser({
     required this.metaSymbol,
-  });
+  }) : assert(metaSymbol.length == 1);
 
   /// Meta symbol of this token.
   /// Must be one symbol.
   ///
-  /// For example: Y for год.
+  /// For example: Y for year.
   final String metaSymbol;
 
+  /// Parse input [rawWord] for current symbol.
+  ///
+  /// Must return [metaSymbol] if this [rawWord] is belong to current parsing form.
+  /// null otherwise.
+  ///
+  /// Optional [option] argument is used for indicate what form of parsing will be parsed successful.
   String? parse(
     String rawWord, [
     ParserPluralOption option = ParserPluralOption.all,
   ]);
 }
 
+/// Parser that
 class PluralTokenParser extends TokenParser {
   const PluralTokenParser({
     required this.normalForms,
@@ -32,12 +46,39 @@ class PluralTokenParser extends TokenParser {
 
   /// Normal form of the token that you need to parse.
   ///
-  /// For example: год
+  /// For example: [год]
   final List<String> normalForms;
 
-  /// All possible forms for token.
+  /// All possible forms for token with their plural indication.
   ///
-  /// For example: год, года, лет, etc.
+  /// See [ParserPluralOption] for more info.
+  ///
+  ///
+  /// For example:
+  /// ```
+  /// {
+  ///   'год': 1,
+  ///   'года': 1,
+  ///   'году': 1,
+  ///   'годом': 1,
+  ///   'годе': 1,
+  ///   'годов': 2,
+  ///   'годам': 2,
+  ///   'годами': 2,
+  ///   'годах': 2,
+  ///   'годы': 2,
+  ///   'лета': 2,
+  ///   'лет': 2,
+  ///   'летам': 2,
+  ///   'летами': 2,
+  ///   'летах': 2,
+  /// }
+  /// ```
+  ///
+  /// Possible plurals numbers:
+  /// - 0 – for any form
+  /// - 1 – for singular
+  /// - 2 – for plurals
   final Map<String, int> forms;
 
   @override
@@ -79,6 +120,9 @@ class PluralTokenParser extends TokenParser {
   int get hashCode => Object.hash(normalForms, forms, metaSymbol);
 }
 
+/// Extended plural parser, for parser that can have some relative parsers with order.
+///
+/// Currently used for weekdays and months, to indicate value of specific weekday/month.
 class OrderPluralTokenParser extends PluralTokenParser {
   const OrderPluralTokenParser({
     required super.normalForms,
@@ -87,9 +131,18 @@ class OrderPluralTokenParser extends PluralTokenParser {
     required this.order,
   });
 
-  /// Month index
+  /// Order of current parser
+  ///
+  /// For example:
+  /// order | weekday
+  /// -|-
+  /// 1 | monday
+  /// 2 | tuesday
+  /// 3 | wednesday
+  /// etc.
   final int order;
 
+  /// Used to find order by word, instead of symbol.
   int? parseOrder(String rawWord) {
     final symbol = parse(rawWord);
     return symbol != null ? order : null;
@@ -97,6 +150,7 @@ class OrderPluralTokenParser extends PluralTokenParser {
 }
 
 extension OrderPluralTokenParserListUtils on List<OrderPluralTokenParser> {
+  /// Utility method, that find [order] of specific parser in the list.
   int? parseOrder(String rawWord) {
     for (final parser in this) {
       final order = parser.parseOrder(rawWord);
@@ -106,6 +160,9 @@ extension OrderPluralTokenParserListUtils on List<OrderPluralTokenParser> {
   }
 }
 
+/// Parser that will parse integers into symbol.
+///
+/// Currently used for recognize big or small numbers.
 class IntegerTokenParser extends TokenParser {
   const IntegerTokenParser({
     required this.validator,
@@ -147,6 +204,9 @@ class IntegerTokenParser extends TokenParser {
 }
 
 extension PluralTokenParserUtils on PluralTokenParser {
+  /// Utility method that helps us create [MaybeDateToken] from any plural token.
+  ///
+  /// Currently used for replace some tokens with another.
   MaybeDateToken toMaybeDateToken(int start, int end) => MaybeDateToken(
         text: normalForms.first,
         symbol: metaSymbol,

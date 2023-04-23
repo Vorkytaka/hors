@@ -1,41 +1,53 @@
-// "год"	Y
-// название месяца	M
-// название дня недели	D
-// "назад"	b
-// "спустя"	l (lower L)
-// "через"	i
-// "выходной"	W
-// "минута"	e
-// "час"	h
-// "день"	d
-// "неделя"	w
-// "месяц"	m
-// "прошлый", "прошедший", "предыдущий"	s
-// "этот", "текущий", "нынешний"	u
-// "ближайший", "грядущий"	y
-// "следующий", "будущий"	x
-// "послезавтра"	6
-// "завтра"	5
-// "сегодня"	4
-// "вчера"	3
-// "позавчера"	2
-// "утро"	r
-// "полдень"	n
-// "вечер"	v
-// "ночь"	g
-// "половина"	H
-// "четверть"	Q
-// "в", "с"	f
-// "до", "по"	t
-// "на"	о
-// "число"	#
-// "и"	N
-// число больше 1900 и меньше 9999	1
-// неотрицательное число меньше 1901	0
-// уже обработанная алгоритмом дата	@
-// любой другой токен	_
+import 'package:meta/meta.dart';
+
 import 'token_parser.dart';
 
+/// Russian token parsers.
+///
+/// In this class you can found many ready-to-use parsers, that you can use with [Hors] class.
+/// In many cases all you need to do is use [TokenParsers.all].
+/// But you free to use those parsers what you need, or event create your own.
+///
+/// Table of parsers to symbols:
+/// Parser | Symbol
+/// -|-
+/// "год" | Y
+/// название месяца | M
+/// название дня недели | D
+/// "назад" | b
+/// "спустя" | l (lower L)
+/// "через" | i
+/// "выходной" | W
+/// "минута" | e
+/// "час" | h
+/// "день" | d
+/// "неделя" | w
+/// "месяц" | m
+/// "прошлый", "прошедший", "предыдущий" | s
+/// "этот", "текущий", "нынешний" | u
+/// "ближайший", "грядущий" | y
+/// "следующий", "будущий" | x
+/// "послезавтра" | 6
+/// "завтра" | 5
+/// "сегодня" | 4
+/// "вчера" | 3
+/// "позавчера" | 2
+/// "утро" | r
+/// "полдень" | n
+/// "вечер" | v
+/// "ночь" | g
+/// "половина" | H
+/// "четверть" | Q
+/// "в", "с" | f
+/// "до", "по" | t
+/// "на" | о
+/// "число" | #
+/// "и" | N
+/// число больше 1900 и меньше 9999 | 1
+/// неотрицательное число меньше 1901 | 0
+/// уже обработанная алгоритмом дата | @
+/// любой другой токен | _
+@experimental
 class TokenParsers {
   const TokenParsers._();
 
@@ -926,6 +938,7 @@ class TokenParsers {
     metaSymbol: 'N',
   );
 
+  /// List of all month parsers in russian.
   static const List<OrderPluralTokenParser> months = [
     january,
     february,
@@ -941,6 +954,7 @@ class TokenParsers {
     december,
   ];
 
+  /// List of all days of week parsers in russian.
   static const List<OrderPluralTokenParser> daysOfWeek = [
     monday,
     tuesday,
@@ -951,7 +965,8 @@ class TokenParsers {
     sunday,
   ];
 
-  static List<TokenParser> all = [
+  /// List of all default russian parsers.
+  static final List<TokenParser> all = [
     after,
     afterPostfix,
     previousPostfix,

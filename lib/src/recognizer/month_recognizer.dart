@@ -1,8 +1,7 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-
 import '../data.dart';
+import '../domain.dart';
 import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class MonthRecognizer extends Recognizer {
   const MonthRecognizer();
@@ -12,15 +11,21 @@ class MonthRecognizer extends Recognizer {
       RegExp(r'([usxy])?M'); // [в] (прошлом|этом|следующем) марте
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     int year = fromDatetime.year;
     bool yearFixed = false;
 
-    final monthToken = tokens.firstWhere((token) => token.symbol == 'M');
+    final monthTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'M',
+      match.start,
+    );
+    final monthToken = tokens[monthTokenIndex];
     int month = fromDatetime.month;
     for (final parser in TokenParsers.months) {
       final symbol = parser.parse(monthToken.text);
@@ -50,16 +55,20 @@ class MonthRecognizer extends Recognizer {
       yearFixed = true;
     }
 
-    final dateBuilder = AbstractDate.builder(date: DateTime(year, month, 1));
-    dateBuilder.fix(FixPeriod.month);
-    if (yearFixed) dateBuilder.fix(FixPeriod.year);
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
+    dateToken.date = DateTime(year, month, 1);
+    dateToken.fix(FixPeriod.month);
+    if (yearFixed) dateToken.fix(FixPeriod.year);
 
-    return [
-      DateToken(
-        start: tokens.first.start,
-        end: tokens.last.end,
-        date: dateBuilder.build(),
-      )
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [dateToken],
+    );
+
+    return true;
   }
 }

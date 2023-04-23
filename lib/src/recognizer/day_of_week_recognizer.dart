@@ -1,8 +1,8 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/data.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-import 'package:hors/src/token/token_parser.dart';
-import 'package:hors/src/token/token_parsers.dart';
+import '../data.dart';
+import '../domain.dart';
+import '../token/token_parser.dart';
+import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class DayOfWeekRecognizer extends Recognizer {
   const DayOfWeekRecognizer();
@@ -12,20 +12,28 @@ class DayOfWeekRecognizer extends Recognizer {
       RegExp(r'([usxy])?(D)'); // [в] (следующий/этот/предыдущий) понедельник
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
-    final dayOfWeekToken = tokens.firstWhere((token) => token.symbol == 'D');
-    final dayOfWeek = TokenParsers.daysOfWeek.parseOrder(dayOfWeekToken.text);
+    final tokens = data.tokens;
+    final weekdayTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == 'D',
+      match.start,
+    );
+    final weekdayToken = tokens[weekdayTokenIndex];
+    final weekday = TokenParsers.daysOfWeek.parseOrder(weekdayToken.text);
 
-    if (dayOfWeek == null) return null;
+    if (weekday == null) return false;
 
     final currentDayOfWeek = fromDatetime.weekday;
-    int diff = dayOfWeek - currentDayOfWeek;
+    int diff = weekday - currentDayOfWeek;
 
-    final dateBuilder = AbstractDate.builder();
+    final dateToken = DateToken(
+      start: tokens[match.start].start,
+      end: tokens[match.end - 1].end,
+    );
 
     final relate = match.group(1);
     if (relate != null) {
@@ -40,20 +48,20 @@ class DayOfWeekRecognizer extends Recognizer {
           diff -= 7;
           break;
       }
-      dateBuilder.fixDownTo(FixPeriod.day);
+      dateToken.fixDownTo(FixPeriod.day);
     } else {
-      dateBuilder.fix(FixPeriod.day);
-      dateBuilder.fixDayOfWeek = true;
+      dateToken.fix(FixPeriod.day);
+      dateToken.fixDayOfWeek = true;
     }
 
-    dateBuilder.date = fromDatetime.add(Duration(days: diff));
+    dateToken.date = fromDatetime.add(Duration(days: diff));
 
-    return [
-      DateToken(
-        date: dateBuilder.build(),
-        start: tokens.first.start,
-        end: tokens.last.end,
-      ),
-    ];
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [dateToken],
+    );
+
+    return true;
   }
 }

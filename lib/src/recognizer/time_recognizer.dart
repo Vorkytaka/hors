@@ -1,7 +1,8 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/token/token_parser.dart';
-
 import '../data.dart';
+import '../domain.dart';
+import '../token/token_parser.dart';
+import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class TimeRecognizer extends Recognizer {
   const TimeRecognizer();
@@ -11,11 +12,13 @@ class TimeRecognizer extends Recognizer {
       r'([rvgd])?([fot])?([QH])?(h|(0)(h)?)((0)e?)?([rvgd])?'); // (в/с/до) (половину/четверть) час/9 (часов) (30 (минут)) (утра/дня/вечера/ночи)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final prePartOfDay = match.group(1);
     final number = match.group(5);
     final postPartOfDay = match.group(9);
@@ -25,7 +28,7 @@ class TimeRecognizer extends Recognizer {
         number == null &&
         match.group(6) == null &&
         postPartOfDay == null) {
-      return null;
+      return false;
     }
 
     if (number == null) {
@@ -33,11 +36,14 @@ class TimeRecognizer extends Recognizer {
 
       // no part of day AND no "from" token in phrase, quit
       if (partOfDay != 'd' && partOfDay != 'g' && match.group(2) == null) {
-        return null;
+        return false;
       }
     }
 
-    final hoursTokenIndex = tokens.indexWhere((token) => token.symbol == '0');
+    final hoursTokenIndex = tokens.indexWhere(
+      (token) => token.symbol == '0',
+      match.start,
+    );
     int hours;
     if (hoursTokenIndex >= 0) {
       final hoursToken = tokens[hoursTokenIndex];
@@ -47,7 +53,7 @@ class TimeRecognizer extends Recognizer {
     }
 
     if (hours < 0 || hours > 23) {
-      return null;
+      return false;
     }
 
     int minutes = 0;
@@ -63,35 +69,41 @@ class TimeRecognizer extends Recognizer {
       }
     } else if (match.group(3) != null && hours > 0) {
       switch (match.group(3)) {
-        case "Q": // quarter
+        case 'Q': // quarter
           hours--;
           minutes = 15;
           break;
-        case "H": // half
+        case 'H': // half
           hours--;
           minutes = 30;
           break;
       }
     }
 
-    final builder = AbstractDate.builder();
-    builder.fix(FixPeriod.timeUncertain);
-    if (hours > 12) builder.fix(FixPeriod.time);
+    final start = tokens[match.start].start;
+    final end = tokens[match.end - 1].end;
+
+    final dateToken = DateToken(
+      start: start,
+      end: end,
+    );
+    dateToken.fix(FixPeriod.timeUncertain);
+    if (hours > 12) dateToken.fix(FixPeriod.time);
 
     if (hours <= 12) {
       final String part = prePartOfDay ?? postPartOfDay ?? 'd';
       if (prePartOfDay != null || postPartOfDay != null) {
-        builder.fix(FixPeriod.time);
+        dateToken.fix(FixPeriod.time);
       }
 
       switch (part) {
-        case "d": // day
+        case 'd': // day
           if (hours <= 4) hours += 12;
           break;
-        case "v": // evening
+        case 'v': // evening
           if (hours <= 11) hours += 12;
           break;
-        case "g": // night
+        case 'g': // night
           if (hours >= 10) hours += 12;
           break;
       }
@@ -99,14 +111,19 @@ class TimeRecognizer extends Recognizer {
       if (hours >= 24) hours -= 24;
     }
 
-    builder.time = Duration(hours: hours, minutes: minutes);
+    dateToken.time = Duration(hours: hours, minutes: minutes);
 
-    final start = tokens.first.start;
-    final end = tokens.last.end;
-    return [
-      if (match.group(2) == 't')
-        TokenParsers.timeTo.toMaybeDateToken(start, end),
-      DateToken(start: start, end: end, date: builder.build()),
-    ];
+    // todo
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      [
+        if (match.group(2) == 't')
+          TokenParsers.timeTo.toMaybeDateToken(start, end),
+        dateToken,
+      ],
+    );
+
+    return true;
   }
 }

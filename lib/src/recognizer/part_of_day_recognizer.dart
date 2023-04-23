@@ -1,9 +1,8 @@
-import 'package:hors/hors.dart';
-import 'package:hors/src/recognizer/recognizer.dart';
-import 'package:hors/src/token/token_parser.dart';
-
 import '../data.dart';
+import '../domain.dart';
+import '../token/token_parser.dart';
 import '../token/token_parsers.dart';
+import 'recognizer.dart';
 
 class PartOfDayRecognizer extends Recognizer {
   const PartOfDayRecognizer();
@@ -13,16 +12,18 @@ class PartOfDayRecognizer extends Recognizer {
       r'(@)?f?([ravgdn])f?(@)?'); // (дата) (в/с) утром/днём/вечером/ночью (в/с) (дата)
 
   @override
-  List<Token>? parser(
+  bool parser(
     DateTime fromDatetime,
     Match match,
-    List<Token> tokens,
+    ParsingData data,
   ) {
+    final tokens = data.tokens;
+
     final preDate = match.group(1);
     final postDate = match.group(3);
 
     if (preDate == null && postDate == null) {
-      return null;
+      return false;
     }
 
     int hourStart = 0;
@@ -52,47 +53,60 @@ class PartOfDayRecognizer extends Recognizer {
     }
 
     if (hourStart == 0) {
-      return null;
+      return false;
     }
-
-    final builder = AbstractDate.builder();
-    builder.time = Duration(hours: hourStart);
-    builder.fix(FixPeriod.timeUncertain);
 
     final int start;
     if (preDate != null) {
-      start = tokens[1].start;
+      start = tokens[match.start + 1].start;
     } else {
-      start = tokens.first.start;
+      start = tokens[match.start].start;
     }
 
     final int end;
     if (postDate != null) {
-      end = tokens[tokens.length - 2].end;
+      end = tokens[match.end - 2].end;
     } else {
-      end = tokens.last.end;
+      end = tokens[match.end - 1].end;
     }
 
+    final dateToken = DateToken(
+      start: start,
+      end: end,
+    );
+    dateToken.time = Duration(hours: hourStart);
+    dateToken.fix(FixPeriod.timeUncertain);
+
+    final List<Token> newTokens;
     if (hourStart == hourEnd) {
-      return [
-        if (preDate != null) tokens.first,
-        DateToken(
-          start: start,
-          end: end,
-          date: builder.build(),
-        ),
-        if (postDate != null) tokens.last,
+      newTokens = [
+        if (preDate != null) tokens[match.start],
+        dateToken,
+        if (postDate != null) tokens[match.end - 1],
       ];
     } else {
-      final spanBuilder = AbstractDate.builder(time: Duration(hours: hourEnd));
-      spanBuilder.fix(FixPeriod.timeUncertain);
-      return [
-        if (preDate != null) tokens.first,
-        DateToken(start: start, end: end, date: builder.build()),
+      final spanToken = DateToken(
+        start: start,
+        end: end,
+      );
+      spanToken.time = Duration(hours: hourEnd);
+      spanToken.fix(FixPeriod.timeUncertain);
+      newTokens = [
+        if (preDate != null) tokens[match.start],
+        dateToken,
         TokenParsers.timeTo.toMaybeDateToken(start, end),
-        DateToken(start: start, end: end, date: spanBuilder.build()),
-        if (postDate != null) tokens.last,
+        spanToken,
+        if (postDate != null) tokens[match.end - 1],
       ];
     }
+
+    // todo: better way to replace
+    tokens.replaceRange(
+      match.start,
+      match.end,
+      newTokens,
+    );
+
+    return true;
   }
 }
