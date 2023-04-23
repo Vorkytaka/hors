@@ -36,3 +36,24 @@ final result = hors.parse('Завтра состоится событие в 11 
     - We have plans to fix this
 - Some recognizers is relate with each-other, so you should know in which order they used or you can
   get unpredictable results.
+
+### Examples
+
+```
+> Завтра состоится событие в 11 часов
+	Text: Состоится событие
+	DateTimeToken, fixed:
+	2023-04-24 11:00:00.000
+
+> Через 2 дня в 15 часов 30 минут к врачу
+	Text: К врачу
+	DateTimeToken, spanForward:
+	Date:	2023-04-25 15:30:00.000
+	Span:	63:30:00.000000
+
+> Отправимся на рыбалку с 25 до 28 числа
+	Text: Отправимся на рыбалку
+	DateTimeToken, period:
+	From:	2023-04-25 00:00:00.000
+	To:		2023-04-28 00:00:00.000
+```
