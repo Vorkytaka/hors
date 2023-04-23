@@ -62,7 +62,9 @@ final result = hors.parse('Завтра состоится событие в 11 
 
 [Original library](https://github.com/DenisNP/Hors) is created
 by [DenisNP](https://github.com/DenisNP) with C#.
-This is port of library to the Dart language.
+
+This is a port of library to the Dart language.
+
 For now this library is backward compatible with the original one.
 But this implementation written a little bit different.
 
