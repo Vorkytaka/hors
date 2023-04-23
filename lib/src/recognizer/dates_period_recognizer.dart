@@ -1,5 +1,4 @@
 import '../data.dart';
-import '../domain.dart';
 import '../token/token_parsers.dart';
 import '../utils.dart';
 import 'recognizer.dart';

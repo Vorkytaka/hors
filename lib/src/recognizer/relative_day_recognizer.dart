@@ -1,5 +1,4 @@
 import '../data.dart';
-import '../domain.dart';
 import 'recognizer.dart';
 
 class RelativeDayRecognizer extends Recognizer {

@@ -1,5 +1,4 @@
 import '../data.dart';
-import '../domain.dart';
 import 'recognizer.dart';
 
 class TimeSpanRecognizer extends Recognizer {
