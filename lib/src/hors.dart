@@ -118,12 +118,18 @@ class Hors {
     }
 
     final tokens = getFinalTokens(fromDatetime, data);
-    final textWithoutTokens = generateTextWithoutTokens(text, tokens);
+    final List<IntRange> tokenRanges = tokens
+        .map((e) => e.ranges)
+        .expand((element) => element)
+        .toList(growable: false);
+    final ranges = combineIntRange(tokenRanges);
+    final textWithoutTokens = generateTextWithoutTokens(text, ranges);
 
     return HorsResult(
       sourceText: text,
       tokens: tokens,
       textWithoutTokens: textWithoutTokens,
+      ranges: ranges,
     );
   }
 
@@ -171,11 +177,17 @@ class HorsResult {
   /// Text without dates.
   final String textWithoutTokens;
 
+  /// List of all ranges from [tokens] that combine together.
+  ///
+  /// Useful for cases, when you need to indicate all tokens in the [sourceText].
+  final List<IntRange> ranges;
+
   /// Used for create hors results.
   const HorsResult({
     required this.sourceText,
     required this.tokens,
     required this.textWithoutTokens,
+    required this.ranges,
   });
 
   @override
@@ -322,7 +334,8 @@ class IntRange {
   const IntRange({
     required this.start,
     required this.end,
-  });
+  })  : assert(start >= 0),
+        assert(end >= start);
 
   @override
   bool operator ==(Object other) =>
