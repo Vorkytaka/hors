@@ -80,18 +80,33 @@ class Body extends StatefulWidget {
 }
 
 class _BodyState extends State<Body> {
-  final _controller = TextEditingController();
-  HorsResult? _result;
+  HorsTextEditingController? _controller;
 
   @override
-  void initState() {
-    super.initState();
-    _controller.addListener(_onTextChanged);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_controller == null) {
+      final paint = Paint()
+        ..color = Colors.blue
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round
+        ..strokeWidth = 2.0
+        ..strokeJoin = StrokeJoin.round;
+
+      _controller = HorsTextEditingController(
+        hors: HorsProvider.of(context),
+        dateTokenTextStyle: TextStyle(
+          color: Colors.red,
+          background: paint,
+        ),
+      );
+      _controller?.addListener(_onTextChanged);
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -109,7 +124,7 @@ class _BodyState extends State<Body> {
               vertical: 16,
             ),
             children: [
-              if (_result != null)
+              if (_controller?.result != null)
                 Card(
                   child: Column(
                     children: [
@@ -120,8 +135,8 @@ class _BodyState extends State<Body> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _result!.textWithoutTokens.isNotEmpty
-                            ? _result!.textWithoutTokens
+                        _controller!.result!.textWithoutTokens.isNotEmpty
+                            ? _controller!.result!.textWithoutTokens
                             : '–',
                         style: theme.textTheme.titleLarge,
                       ),
@@ -129,14 +144,14 @@ class _BodyState extends State<Body> {
                     ],
                   ),
                 ),
-              if (_result != null)
+              if (_controller?.result != null)
                 ListView.builder(
                   shrinkWrap: true,
                   physics: const ScrollPhysics(),
                   padding: EdgeInsets.zero,
-                  itemCount: _result!.tokens.length,
+                  itemCount: _controller!.result!.tokens.length,
                   itemBuilder: (context, i) => DateTimeTokenCard(
-                    token: _result!.tokens[i],
+                    token: _controller!.result!.tokens[i],
                   ),
                 ),
             ],
@@ -149,12 +164,11 @@ class _BodyState extends State<Body> {
 
   void _onTextChanged() {
     setState(() {});
-    _result = HorsProvider.of(context).parse(_controller.text);
   }
 }
 
 class Input extends StatelessWidget {
-  final TextEditingController controller;
+  final TextEditingController? controller;
 
   const Input({
     super.key,
@@ -189,11 +203,11 @@ class Input extends StatelessWidget {
             ),
             fillColor: theme.colorScheme.background,
             filled: true,
-            suffixIcon: controller.text.isEmpty
+            suffixIcon: controller?.text.isEmpty ?? false
                 ? const SizedBox.shrink()
                 : IconButton(
                     onPressed: () {
-                      controller.text = '';
+                      controller?.text = '';
                     },
                     icon: const Icon(Icons.clear),
                   ),
@@ -292,5 +306,80 @@ class DateTimeTokenCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class HorsTextEditingController extends TextEditingController {
+  final Hors hors;
+  HorsResult? _result;
+  final TextStyle? dateTokenTextStyle;
+
+  HorsTextEditingController({
+    required this.hors,
+    this.dateTokenTextStyle,
+  });
+
+  HorsResult? get result => _result;
+
+  @override
+  set value(TextEditingValue newValue) {
+    _result = hors.parse(newValue.text);
+    super.value = newValue;
+  }
+
+  @override
+  TextSpan buildTextSpan({
+    required BuildContext context,
+    TextStyle? style,
+    required bool withComposing,
+  }) {
+    final List<IntRange>? ranges = _result?.ranges;
+
+    if (ranges == null || ranges.isEmpty) {
+      return super.buildTextSpan(
+        context: context,
+        style: style,
+        withComposing: withComposing,
+      );
+    }
+
+    final rangesIterator = ranges.iterator;
+    rangesIterator.moveNext();
+
+    final TextStyle? dateStyle = style?.merge(dateTokenTextStyle);
+
+    final length = text.length;
+    int lastStart = 0;
+    final spans = <InlineSpan>[];
+    do {
+      final range = rangesIterator.current;
+
+      final simpleText = text.substring(lastStart, range.start);
+      if (simpleText.isNotEmpty) {
+        spans.add(TextSpan(
+          text: simpleText,
+          style: style,
+        ));
+      }
+
+      final dateTimeText = text.substring(range.start, range.end);
+      if (dateTimeText.isNotEmpty) {
+        spans.add(TextSpan(
+          text: dateTimeText,
+          style: dateStyle,
+        ));
+      }
+
+      lastStart = range.end;
+    } while (lastStart < length && rangesIterator.moveNext());
+
+    if (lastStart < length) {
+      spans.add(TextSpan(
+        text: text.substring(lastStart),
+        style: style,
+      ));
+    }
+
+    return TextSpan(children: spans);
   }
 }
