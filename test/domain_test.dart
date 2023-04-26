@@ -75,7 +75,7 @@ void main() {
       '',
     ];
 
-    for(int i = 0; i < textsWithoutTokens.length; i++) {
+    for (int i = 0; i < textsWithoutTokens.length; i++) {
       final result = generateTextWithoutTokens(texts[i], ranges[i]);
       expect(result, textsWithoutTokens[i]);
     }
