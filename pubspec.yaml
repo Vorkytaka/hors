@@ -1,6 +1,6 @@
 name: hors
 description: A simple Dart package to extract date and time from Russian texts.
-version: 0.9.0
+version: 0.9.1
 repository: https://github.com/Vorkytaka/hors
 
 environment:
