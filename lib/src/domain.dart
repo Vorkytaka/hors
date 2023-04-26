@@ -659,33 +659,38 @@ void fixZeros(ParsingData data) {
 }
 
 /// Return text without tokens start with upper char.
-/// TODO: Optimize and tests for this function.
 @internal
 String generateTextWithoutTokens(
   String text,
-  List<DateTimeToken> tokens,
+  List<IntRange> ranges,
 ) {
-  final List<IntRange> ranges = tokens
-      .map((e) => e.ranges)
-      .expand((element) => element)
-      .toList(growable: false);
+  if (ranges.isEmpty) return text;
 
-  for (int i = ranges.length - 1; i >= 0; i--) {
-    final range = ranges[i];
+  final rangesIterator = ranges.iterator;
+  rangesIterator.moveNext();
 
-    text = text.substring(0, range.start) +
-        (range.end < text.length ? text.substring(range.end) : '');
+  final length = text.length;
+  int lastStart = 0;
+  final sb = StringBuffer();
+  do {
+    final range = rangesIterator.current;
+    final str = text.substring(lastStart, range.start).trimLeft();
+    sb.write(str);
+    lastStart = range.end + 1;
+  } while (lastStart < length && rangesIterator.moveNext());
+
+  if (lastStart < length) {
+    sb.write(text.substring(lastStart).trim());
   }
 
-// Remove extra spaces
-  text = text.trim().replaceAll(RegExp(r'\s{2,}'), ' ');
+  text = sb.toString();
 
-// If text is not empty, then start it with upper char
+  // If text is not empty, then start it with upper char
   if (text.isNotEmpty) {
     text = text.substring(0, 1).toUpperCase() + text.substring(1);
   }
 
-  return text;
+  return text.trimRight();
 }
 
 /// Transform each [Match] to a [TextToken].
@@ -697,4 +702,38 @@ Token matchToTextToken(Match match) {
     start: match.start,
     end: match.end,
   );
+}
+
+/// Create a list of ranges with combine cross ones.
+List<IntRange> combineIntRange(List<IntRange> ranges) {
+  if (ranges.isEmpty || ranges.length == 1) return ranges;
+
+  ranges = ranges.toList()..sort((a, b) => a.start.compareTo(b.start));
+
+  int start = ranges.first.start;
+  int end = ranges.first.end;
+
+  final newRanges = <IntRange>[];
+  for (int i = 1; i < ranges.length; i++) {
+    final range = ranges[i];
+
+    if (range.end <= end) continue;
+
+    if (range.start > end) {
+      final intRange = IntRange(start: start, end: end);
+      newRanges.add(intRange);
+
+      start = range.start;
+      end = range.end;
+
+      continue;
+    }
+
+    end = range.end;
+  }
+
+  final intRange = IntRange(start: start, end: end);
+  newRanges.add(intRange);
+
+  return newRanges.toList(growable: false);
 }
