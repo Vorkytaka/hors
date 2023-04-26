@@ -1,0 +1,23 @@
+name: test
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+#        sdk: [ n.n.n, stable, beta, dev ]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dart-lang/setup-dart@v1
+
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze
+      - run: dart test
