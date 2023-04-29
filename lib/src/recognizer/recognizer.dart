@@ -7,6 +7,7 @@ import 'day_of_month_recognizer.dart';
 import 'day_of_week_recognizer.dart';
 import 'holiday_recognizer.dart';
 import 'month_recognizer.dart';
+import 'numbers_in_words_recognizer.dart';
 import 'part_of_day_recognizer.dart';
 import 'relative_date_recognizer.dart';
 import 'relative_day_recognizer.dart';
@@ -24,6 +25,7 @@ abstract class Recognizer {
 
   /// List of all default recognizer.
   static const List<Recognizer> all = [
+    NumbersInDatesRecognizer(),
     HolidayRecognizer(),
     DatesPeriodRecognizer(),
     DayOfMonthRecognizer(),

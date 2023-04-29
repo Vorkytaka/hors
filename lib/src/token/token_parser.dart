@@ -214,3 +214,30 @@ extension PluralTokenParserUtils on PluralTokenParser {
         end: end,
       );
 }
+
+class WordNumberTokenParser extends TokenParser {
+  final Set<String> forms;
+  final int value;
+  final int level;
+  final bool isMultiplier;
+
+  const WordNumberTokenParser({
+    required this.forms,
+    required this.value,
+    required this.level,
+    required this.isMultiplier,
+    required super.metaSymbol,
+  });
+
+  @override
+  String? parse(
+    String rawWord, [
+    ParserPluralOption option = ParserPluralOption.all,
+  ]) {
+    if (forms.contains(rawWord)) {
+      return metaSymbol;
+    }
+
+    return null;
+  }
+}
