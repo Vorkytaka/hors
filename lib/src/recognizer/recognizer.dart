@@ -25,7 +25,7 @@ abstract class Recognizer {
 
   /// List of all default recognizer.
   static const List<Recognizer> all = [
-    NumbersInDatesRecognizer(),
+    NumbersInWordsRecognizer(),
     HolidayRecognizer(),
     DatesPeriodRecognizer(),
     DayOfMonthRecognizer(),

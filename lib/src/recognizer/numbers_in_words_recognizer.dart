@@ -3,8 +3,8 @@ import '../data.dart';
 
 /// Recognizer that trying to parse all numbers that written in words
 /// and replace them with integers value.
-class NumbersInDatesRecognizer extends Recognizer {
-  const NumbersInDatesRecognizer();
+class NumbersInWordsRecognizer extends Recognizer {
+  const NumbersInWordsRecognizer();
 
   @override
   RegExp get regexp => RegExp(r'x+');
@@ -35,7 +35,7 @@ class NumbersInDatesRecognizer extends Recognizer {
       final isNewNumber = (parser.isMultiplier &&
               globalLevel != null &&
               parser.level >= globalLevel) ||
-          (localLevel != null && parser.level >= localLevel);
+          (!parser.isMultiplier && localLevel != null && parser.level >= localLevel);
 
       if (isNewNumber) {
         final value = globalValue + localValue;
