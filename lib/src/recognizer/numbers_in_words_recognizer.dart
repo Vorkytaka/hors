@@ -1,12 +1,19 @@
 import '../../hors.dart';
 import '../data.dart';
 
+/// Recognizer that trying to parse all numbers that written in words
+/// and replace them with integers value.
 class NumbersInDatesRecognizer extends Recognizer {
   const NumbersInDatesRecognizer();
 
   @override
   RegExp get regexp => RegExp(r'x+');
 
+  // TODO: Several numbers?
+  // For now, this recognizer can parse one and only one number per parse.
+  // But what if we need to parse several?
+  // Looks like we can, instead of return false on some case, create new integer
+  // And replace tokens with list of new
   @override
   bool parser(
     DateTime fromDatetime,
@@ -28,7 +35,7 @@ class NumbersInDatesRecognizer extends Recognizer {
           .firstWhere((parser) => parser.parse(token.text) != null);
 
       if (parser.isMultiplier) {
-        if (globalLevel != null && parser.level > globalLevel) {
+        if (globalLevel != null && parser.level >= globalLevel) {
           return false;
         }
 
@@ -39,7 +46,7 @@ class NumbersInDatesRecognizer extends Recognizer {
         localLevel = null;
         localValue = 0;
       } else {
-        if (localLevel != null && parser.level > localLevel) {
+        if (localLevel != null && parser.level >= localLevel) {
           return false;
         }
 
