@@ -9,11 +9,6 @@ class NumbersInDatesRecognizer extends Recognizer {
   @override
   RegExp get regexp => RegExp(r'x+');
 
-  // TODO: Several numbers?
-  // For now, this recognizer can parse one and only one number per parse.
-  // But what if we need to parse several?
-  // Looks like we can, instead of return false on some case, create new integer
-  // And replace tokens with list of new
   @override
   bool parser(
     DateTime fromDatetime,
@@ -27,6 +22,9 @@ class NumbersInDatesRecognizer extends Recognizer {
     int globalValue = 0;
     int? localLevel;
     int localValue = 0;
+    int start = 0;
+    int end = 0;
+    final newTokens = <Token>[];
     for (int i = 0; i < length; i++) {
       final index = match.start + i;
       final token = tokens[index];
@@ -34,11 +32,49 @@ class NumbersInDatesRecognizer extends Recognizer {
       final parser = TokenParsers.numbersInWords
           .firstWhere((parser) => parser.parse(token.text) != null);
 
-      if (parser.isMultiplier) {
-        if (globalLevel != null && parser.level >= globalLevel) {
-          return false;
+      final isNewNumber = (parser.isMultiplier &&
+              globalLevel != null &&
+              parser.level >= globalLevel) ||
+          (localLevel != null && parser.level >= localLevel);
+
+      if (isNewNumber) {
+        final value = globalValue + localValue;
+
+        final String? symbol;
+        if (value < 1900) {
+          symbol = '0';
+        } else if (value < 9999) {
+          symbol = '1';
+        } else {
+          symbol = null;
         }
 
+        final Token newToken;
+        if (symbol != null) {
+          newToken = MaybeDateToken(
+            text: value.toString(),
+            start: start,
+            end: end,
+            symbol: symbol,
+          );
+        } else {
+          newToken = TextToken(
+            text: data.sourceText.substring(start, end),
+            start: start,
+            end: end,
+          );
+        }
+
+        newTokens.add(newToken);
+
+        globalLevel = null;
+        globalValue = 0;
+        localLevel = null;
+        localValue = 0;
+        start = token.start;
+      }
+
+      if (parser.isMultiplier) {
         globalLevel = parser.level;
         globalValue +=
             localValue == 0 ? parser.value : parser.value * localValue;
@@ -46,42 +82,46 @@ class NumbersInDatesRecognizer extends Recognizer {
         localLevel = null;
         localValue = 0;
       } else {
-        if (localLevel != null && parser.level >= localLevel) {
-          return false;
-        }
-
         localLevel = parser.level;
         localValue += parser.value;
       }
+
+      end = token.end;
     }
 
     final value = globalValue + localValue;
 
-    if (value > 9999) {
-      return false;
-    }
-
-    final String symbol;
+    final String? symbol;
     if (value < 1900) {
       symbol = '0';
-    } else {
+    } else if (value < 9999) {
       symbol = '1';
+    } else {
+      symbol = null;
     }
 
-    final start = tokens[match.start].start;
-    final end = tokens[match.end - 1].end;
+    final Token newToken;
+    if (symbol != null) {
+      newToken = MaybeDateToken(
+        text: value.toString(),
+        start: start,
+        end: end,
+        symbol: symbol,
+      );
+    } else {
+      newToken = TextToken(
+        text: data.sourceText.substring(start, end),
+        start: start,
+        end: end,
+      );
+    }
+
+    newTokens.add(newToken);
 
     tokens.replaceRange(
       match.start,
       match.end,
-      [
-        MaybeDateToken(
-          text: value.toString(),
-          start: start,
-          end: end,
-          symbol: symbol,
-        ),
-      ],
+      newTokens,
     );
 
     return true;

@@ -1114,7 +1114,7 @@ class TokenParsers {
       'десятью',
     },
     value: 10,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1128,7 +1128,7 @@ class TokenParsers {
       'одиннадцатью',
     },
     value: 11,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1142,7 +1142,7 @@ class TokenParsers {
       'двенадцатью',
     },
     value: 12,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1156,7 +1156,7 @@ class TokenParsers {
       'тринадцатью',
     },
     value: 13,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1170,7 +1170,7 @@ class TokenParsers {
       'четырнадцатью',
     },
     value: 14,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1184,7 +1184,7 @@ class TokenParsers {
       'пятнадцатью',
     },
     value: 15,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1198,7 +1198,7 @@ class TokenParsers {
       'шестнадцатью',
     },
     value: 16,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1212,7 +1212,7 @@ class TokenParsers {
       'семнадцатью',
     },
     value: 17,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1226,7 +1226,7 @@ class TokenParsers {
       'восемнадцатью',
     },
     value: 18,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
@@ -1240,7 +1240,7 @@ class TokenParsers {
       'девятнадцатью',
     },
     value: 19,
-    level: 1,
+    level: 2,
     isMultiplier: false,
     metaSymbol: 'x',
   );
