@@ -43,7 +43,7 @@ import 'token_parser.dart';
 /// "на" | о
 /// "число" | #
 /// "и" | N
-/// TODO: x
+/// числа записанные прописью | z
 /// число больше 1900 и меньше 9999 | 1
 /// неотрицательное число меньше 1901 | 0
 /// уже обработанная алгоритмом дата | @
@@ -944,7 +944,7 @@ class TokenParsers {
     value: 0,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wOne = WordNumberTokenParser(
@@ -968,7 +968,7 @@ class TokenParsers {
     value: 1,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wTwo = WordNumberTokenParser(
@@ -991,7 +991,7 @@ class TokenParsers {
     value: 2,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wThree = WordNumberTokenParser(
@@ -1014,7 +1014,7 @@ class TokenParsers {
     value: 3,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFour = WordNumberTokenParser(
@@ -1031,7 +1031,7 @@ class TokenParsers {
     value: 4,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFive = WordNumberTokenParser(
@@ -1045,7 +1045,7 @@ class TokenParsers {
     value: 5,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSix = WordNumberTokenParser(
@@ -1059,7 +1059,7 @@ class TokenParsers {
     value: 6,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSeven = WordNumberTokenParser(
@@ -1073,7 +1073,7 @@ class TokenParsers {
     value: 7,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wEight = WordNumberTokenParser(
@@ -1088,7 +1088,7 @@ class TokenParsers {
     value: 8,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wNine = WordNumberTokenParser(
@@ -1102,7 +1102,7 @@ class TokenParsers {
     value: 9,
     level: 1,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wTen = WordNumberTokenParser(
@@ -1116,7 +1116,7 @@ class TokenParsers {
     value: 10,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wEleven = WordNumberTokenParser(
@@ -1130,7 +1130,7 @@ class TokenParsers {
     value: 11,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wTwelve = WordNumberTokenParser(
@@ -1144,7 +1144,7 @@ class TokenParsers {
     value: 12,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wThirteen = WordNumberTokenParser(
@@ -1158,7 +1158,7 @@ class TokenParsers {
     value: 13,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFourteen = WordNumberTokenParser(
@@ -1172,7 +1172,7 @@ class TokenParsers {
     value: 14,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFifteen = WordNumberTokenParser(
@@ -1186,7 +1186,7 @@ class TokenParsers {
     value: 15,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSixteen = WordNumberTokenParser(
@@ -1200,7 +1200,7 @@ class TokenParsers {
     value: 16,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSeventeen = WordNumberTokenParser(
@@ -1214,7 +1214,7 @@ class TokenParsers {
     value: 17,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wEighteen = WordNumberTokenParser(
@@ -1228,7 +1228,7 @@ class TokenParsers {
     value: 18,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wNineteen = WordNumberTokenParser(
@@ -1242,7 +1242,7 @@ class TokenParsers {
     value: 19,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wTwenty = WordNumberTokenParser(
@@ -1256,7 +1256,7 @@ class TokenParsers {
     value: 20,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wThirty = WordNumberTokenParser(
@@ -1270,7 +1270,7 @@ class TokenParsers {
     value: 30,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFourty = WordNumberTokenParser(
@@ -1283,7 +1283,7 @@ class TokenParsers {
     value: 40,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFifty = WordNumberTokenParser(
@@ -1297,7 +1297,7 @@ class TokenParsers {
     value: 50,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSixty = WordNumberTokenParser(
@@ -1311,7 +1311,7 @@ class TokenParsers {
     value: 60,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSeventy = WordNumberTokenParser(
@@ -1325,7 +1325,7 @@ class TokenParsers {
     value: 70,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wEighty = WordNumberTokenParser(
@@ -1339,7 +1339,7 @@ class TokenParsers {
     value: 80,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wNinety = WordNumberTokenParser(
@@ -1351,7 +1351,7 @@ class TokenParsers {
     value: 90,
     level: 2,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wOneHundred = WordNumberTokenParser(
@@ -1363,7 +1363,7 @@ class TokenParsers {
     value: 100,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wTwoHundred = WordNumberTokenParser(
@@ -1377,7 +1377,7 @@ class TokenParsers {
     value: 200,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wThreeHundred = WordNumberTokenParser(
@@ -1394,7 +1394,7 @@ class TokenParsers {
     value: 300,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFourHundred = WordNumberTokenParser(
@@ -1408,7 +1408,7 @@ class TokenParsers {
     value: 400,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wFiveHundred = WordNumberTokenParser(
@@ -1423,7 +1423,7 @@ class TokenParsers {
     value: 500,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSixHundred = WordNumberTokenParser(
@@ -1438,7 +1438,7 @@ class TokenParsers {
     value: 600,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wSevenHundred = WordNumberTokenParser(
@@ -1453,7 +1453,7 @@ class TokenParsers {
     value: 700,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wEightHundred = WordNumberTokenParser(
@@ -1468,7 +1468,7 @@ class TokenParsers {
     value: 800,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wNineHundred = WordNumberTokenParser(
@@ -1483,7 +1483,7 @@ class TokenParsers {
     value: 900,
     level: 3,
     isMultiplier: false,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const WordNumberTokenParser wThousand = WordNumberTokenParser(
@@ -1502,7 +1502,7 @@ class TokenParsers {
     value: 1000,
     level: 4,
     isMultiplier: true,
-    metaSymbol: 'x',
+    metaSymbol: 'z',
   );
 
   static const List<WordNumberTokenParser> numbersInWords = [

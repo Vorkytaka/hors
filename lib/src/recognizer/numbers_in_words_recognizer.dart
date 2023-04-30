@@ -7,7 +7,7 @@ class NumbersInWordsRecognizer extends Recognizer {
   const NumbersInWordsRecognizer();
 
   @override
-  RegExp get regexp => RegExp(r'x+');
+  RegExp get regexp => RegExp(r'z+');
 
   @override
   bool parser(
