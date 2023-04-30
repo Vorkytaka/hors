@@ -35,7 +35,9 @@ class NumbersInWordsRecognizer extends Recognizer {
       final isNewNumber = (parser.isMultiplier &&
               globalLevel != null &&
               parser.level >= globalLevel) ||
-          (!parser.isMultiplier && localLevel != null && parser.level >= localLevel);
+          (!parser.isMultiplier &&
+              localLevel != null &&
+              parser.level >= localLevel);
 
       if (isNewNumber) {
         final value = globalValue + localValue;
