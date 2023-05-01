@@ -1,3 +1,7 @@
+import 'dart:js' as js;
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:hors/hors.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -63,10 +67,37 @@ class Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    final mediaQuery = MediaQuery.of(context);
+    final double width = min(600, mediaQuery.size.width);
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Hors example'),
+        actions: [
+          if (kIsWeb)
+            TextButton(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+              ),
+              onPressed: () {
+                js.context.callMethod(
+                  'open',
+                  ['https://github.com/Vorkytaka/hors'],
+                );
+              },
+              child: const Text('Github'),
+            ),
+        ],
+      ),
       body: SafeArea(
         bottom: false,
-        child: Body(),
+        child: Center(
+          child: SizedBox(
+            width: width,
+            child: const Body(),
+          ),
+        ),
       ),
     );
   }

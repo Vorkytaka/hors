@@ -32,8 +32,6 @@ final result = hors.parse('Завтра состоится событие в 11 
 
 ### Limitations
 
-- All numbers must be a numbers, not in words (`11 ноября`, not `одинадцатого ноября`).
-    - We have plans to fix this
 - Some recognizers is relate with each-other, so you should know in which order they used or you can
   get unpredictable results.
 
