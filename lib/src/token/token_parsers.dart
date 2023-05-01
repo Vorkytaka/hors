@@ -43,6 +43,7 @@ import 'token_parser.dart';
 /// "на" | о
 /// "число" | #
 /// "и" | N
+/// числа записанные прописью | z
 /// число больше 1900 и меньше 9999 | 1
 /// неотрицательное число меньше 1901 | 0
 /// уже обработанная алгоритмом дата | @
@@ -938,6 +939,613 @@ class TokenParsers {
     metaSymbol: 'N',
   );
 
+  static const WordNumberTokenParser wZero = WordNumberTokenParser(
+    forms: {'ноль'},
+    value: 0,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wOne = WordNumberTokenParser(
+    forms: {
+      'один',
+      'одна',
+      'первый',
+      'первая',
+      'первое',
+      'первые',
+      'первого',
+      'первой',
+      'первых',
+      'первому',
+      'первым',
+      'первую',
+      'первою',
+      'первыми',
+      'первом',
+    },
+    value: 1,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wTwo = WordNumberTokenParser(
+    forms: {
+      'два',
+      'две',
+      'второй',
+      'вторая',
+      'второе',
+      'вторые',
+      'второго',
+      'вторых',
+      'второму',
+      'вторым',
+      'вторую',
+      'второю',
+      'вторыми',
+      'втором',
+    },
+    value: 2,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wThree = WordNumberTokenParser(
+    forms: {
+      'три',
+      'третий',
+      'третьи',
+      'третьего',
+      'третьих',
+      'третьему',
+      'третьим',
+      'третьими',
+      'третьем',
+      'третья',
+      'третье',
+      'третьей',
+      'третью',
+      'третьею',
+    },
+    value: 3,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFour = WordNumberTokenParser(
+    forms: {
+      'четвертое',
+      'четвертого',
+      'четыре',
+      'четырёх',
+      'четырём',
+      'четырьмя',
+      'четвертом',
+      'четвёртом',
+    },
+    value: 4,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFive = WordNumberTokenParser(
+    forms: {
+      'пятое',
+      'пятого',
+      'пять',
+      'пяти',
+      'пятью',
+    },
+    value: 5,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSix = WordNumberTokenParser(
+    forms: {
+      'шестое',
+      'шестого',
+      'шесть',
+      'шести',
+      'шестью',
+    },
+    value: 6,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSeven = WordNumberTokenParser(
+    forms: {
+      'седьмого',
+      'седьмое',
+      'семь',
+      'семи',
+      'семью',
+    },
+    value: 7,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wEight = WordNumberTokenParser(
+    forms: {
+      'восьмое',
+      'восьмого',
+      'восемь',
+      'восьми',
+      'восемью',
+      'восьмью',
+    },
+    value: 8,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wNine = WordNumberTokenParser(
+    forms: {
+      'девятое',
+      'девятого',
+      'девять',
+      'девяти',
+      'девятью',
+    },
+    value: 9,
+    level: 1,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wTen = WordNumberTokenParser(
+    forms: {
+      'десятого',
+      'десятое',
+      'десять',
+      'десяти',
+      'десятью',
+    },
+    value: 10,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wEleven = WordNumberTokenParser(
+    forms: {
+      'одиннадцатое',
+      'одиннадцатого',
+      'одиннадцать',
+      'одиннадцати',
+      'одиннадцатью',
+    },
+    value: 11,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wTwelve = WordNumberTokenParser(
+    forms: {
+      'двенадцатое',
+      'двенадцатого',
+      'двенадцать',
+      'двенадцати',
+      'двенадцатью',
+    },
+    value: 12,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wThirteen = WordNumberTokenParser(
+    forms: {
+      'тринадцатое',
+      'тринадцатого',
+      'тринадцать',
+      'тринадцати',
+      'тринадцатью',
+    },
+    value: 13,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFourteen = WordNumberTokenParser(
+    forms: {
+      'четырнадцатое',
+      'четырнадцатого',
+      'четырнадцать',
+      'четырнадцати',
+      'четырнадцатью',
+    },
+    value: 14,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFifteen = WordNumberTokenParser(
+    forms: {
+      'пятнадцатое',
+      'пятнадцатого',
+      'пятнадцать',
+      'пятнадцати',
+      'пятнадцатью',
+    },
+    value: 15,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSixteen = WordNumberTokenParser(
+    forms: {
+      'шестнадцатое',
+      'шестнадцатого',
+      'шестнадцать',
+      'шестнадцати',
+      'шестнадцатью',
+    },
+    value: 16,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSeventeen = WordNumberTokenParser(
+    forms: {
+      'семнадцатого',
+      'семнадцатое',
+      'семнадцать',
+      'семнадцати',
+      'семнадцатью',
+    },
+    value: 17,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wEighteen = WordNumberTokenParser(
+    forms: {
+      'восемнадцатого',
+      'восемнадцатое',
+      'восемнадцать',
+      'восемнадцати',
+      'восемнадцатью',
+    },
+    value: 18,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wNineteen = WordNumberTokenParser(
+    forms: {
+      'девятнадцатого',
+      'девятнадцатое',
+      'девятнадцать',
+      'девятнадцати',
+      'девятнадцатью',
+    },
+    value: 19,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wTwenty = WordNumberTokenParser(
+    forms: {
+      'двадцатого',
+      'двадцатое',
+      'двадцать',
+      'двадцати',
+      'двадцатью',
+    },
+    value: 20,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wThirty = WordNumberTokenParser(
+    forms: {
+      'тридцатого',
+      'тридцатое',
+      'тридцать',
+      'тридцати',
+      'тридцатью',
+    },
+    value: 30,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFourty = WordNumberTokenParser(
+    forms: {
+      'сорокового',
+      'сороковое',
+      'сорок',
+      'сорока',
+    },
+    value: 40,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFifty = WordNumberTokenParser(
+    forms: {
+      'пятьдесятого',
+      'пятьдесятое',
+      'пятьдесят',
+      'пятидесяти',
+      'пятидесятью',
+    },
+    value: 50,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSixty = WordNumberTokenParser(
+    forms: {
+      'шестьдесятого',
+      'шестьдесятое',
+      'шестьдесят',
+      'шестидесяти',
+      'шестидесятью',
+    },
+    value: 60,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSeventy = WordNumberTokenParser(
+    forms: {
+      'семьдесятого',
+      'семьдесятое',
+      'семьдесят',
+      'семьдесяти',
+      'семьдесятью',
+    },
+    value: 70,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wEighty = WordNumberTokenParser(
+    forms: {
+      'восемьдесятого',
+      'восемьдесятое',
+      'восемьдесят',
+      'восемидесяти',
+      'восемидесятью',
+    },
+    value: 80,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wNinety = WordNumberTokenParser(
+    forms: {
+      'девяностого',
+      'девяностое',
+      'девяносто',
+    },
+    value: 90,
+    level: 2,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wOneHundred = WordNumberTokenParser(
+    forms: {
+      'сто',
+      'ста',
+      'сотня',
+    },
+    value: 100,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wTwoHundred = WordNumberTokenParser(
+    forms: {
+      'двести',
+      'двухсот',
+      'двумстам',
+      'двумястами',
+      'двухстах',
+    },
+    value: 200,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wThreeHundred = WordNumberTokenParser(
+    forms: {
+      'триста',
+      'трехсот',
+      'трёхсот',
+      'трехстам',
+      'трёхстам',
+      'тремястами',
+      'тремстах',
+      'трёмстах',
+    },
+    value: 300,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFourHundred = WordNumberTokenParser(
+    forms: {
+      'четыреста',
+      'четырехсот',
+      'четырехстам',
+      'четырмястами',
+      'четырмястах',
+    },
+    value: 400,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wFiveHundred = WordNumberTokenParser(
+    forms: {
+      'пятьсот',
+      'пятиста',
+      'пятисот',
+      'пятистам',
+      'пятистами',
+      'пятистах',
+    },
+    value: 500,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSixHundred = WordNumberTokenParser(
+    forms: {
+      'шестьсот',
+      'шестиста',
+      'шестисот',
+      'шестистам',
+      'шестистами',
+      'шестистах',
+    },
+    value: 600,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wSevenHundred = WordNumberTokenParser(
+    forms: {
+      'семьсот',
+      'семиста',
+      'семисот',
+      'семистам',
+      'семистами',
+      'семистах',
+    },
+    value: 700,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wEightHundred = WordNumberTokenParser(
+    forms: {
+      'восемьсот',
+      'восьмиста',
+      'восьмисот',
+      'восьмистам',
+      'восьмистами',
+      'восьмистах',
+    },
+    value: 800,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wNineHundred = WordNumberTokenParser(
+    forms: {
+      'девятьсот',
+      'девятиста',
+      'девятисот',
+      'девятистам',
+      'девятистами',
+      'девятистах',
+    },
+    value: 900,
+    level: 3,
+    isMultiplier: false,
+    metaSymbol: 'z',
+  );
+
+  static const WordNumberTokenParser wThousand = WordNumberTokenParser(
+    forms: {
+      'тысяча',
+      'тысячи',
+      'тысяч',
+      'тысяче',
+      'тысячам',
+      'тысячу',
+      'тысячей',
+      'тысячею',
+      'тысячами',
+      'тысячах',
+    },
+    value: 1000,
+    level: 4,
+    isMultiplier: true,
+    metaSymbol: 'z',
+  );
+
+  static const List<WordNumberTokenParser> numbersInWords = [
+    wZero,
+    wOne,
+    wTwo,
+    wThree,
+    wFour,
+    wFive,
+    wSix,
+    wSeven,
+    wEight,
+    wNine,
+    wTen,
+    wEleven,
+    wTwelve,
+    wThirteen,
+    wFourteen,
+    wFifteen,
+    wSixteen,
+    wSeventeen,
+    wEighteen,
+    wNineteen,
+    wTwenty,
+    wThirty,
+    wFourty,
+    wFifty,
+    wSixty,
+    wSeventy,
+    wEighty,
+    wNinety,
+    wOneHundred,
+    wTwoHundred,
+    wThreeHundred,
+    wFourHundred,
+    wFiveHundred,
+    wSixHundred,
+    wSevenHundred,
+    wEightHundred,
+    wNineHundred,
+    wThousand,
+  ];
+
   /// List of all month parsers in russian.
   static const List<OrderPluralTokenParser> months = [
     january,
@@ -1019,5 +1627,6 @@ class TokenParsers {
     yearNumbers,
     numbers,
     and,
+    ...numbersInWords,
   ];
 }
